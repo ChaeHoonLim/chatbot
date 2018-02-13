@@ -1,0 +1,62 @@
+// This loads the environment variables from the .env file
+require('dotenv').config('./.env');
+
+const log4js = require('log4js');
+var builder = require('botbuilder');
+var restify = require('restify');
+var Store = require('./store');
+var spellService = require('./spell-service');
+var logger = log4js.getLogger('worker');
+
+// log4j setting
+log4js.configure({
+  appenders: {
+    out: { type: 'stdout' }
+  },
+  categories: { default: { appenders: ['out'], level: 'debug' } }
+});
+
+// Setup Restify Server
+var server = restify.createServer();
+server.listen(process.env.port || process.env.PORT || 3978, function () {
+    console.log('%s listening to %s', server.name, server.url);
+});
+// Create connector and listen for messages
+var connector = new builder.ChatConnector({
+    appId: process.env.MICROSOFT_APP_ID,
+    appPassword: process.env.MICROSOFT_APP_PASSWORD
+});
+server.post('/api/messages', connector.listen());
+
+
+
+var bot = new builder.UniversalBot(connector, function (session) {
+    session.send('Sorry, I did not understand \'%s\'. Type \'help\' if you need assistance.', session.message.text);
+});
+
+// You can provide your own model by specifing the 'LUIS_MODEL_URL' environment variable
+// This Url can be obtained by uploading or creating your model from the LUIS portal: https://www.luis.ai/
+var recognizer = new builder.LuisRecognizer('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/c6773c5b-4c15-494f-ae24-3f830e15369b?subscription-key=883c85d1f7034db9ac4aaf1c9226c881&verbose=true&timezoneOffset=0&q=');
+bot.recognizer(recognizer);
+
+bot.dialog('route', function (session, args) {
+		var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'poi-name');
+		if (result) {
+			logger.info("route: " + result.entity);
+		}
+		logger.info("route");
+}).triggerAction({
+    matches: 'route'
+});
+
+bot.dialog('schedule', function (session, args) {
+		var entity = builder.EntityRecognizer.findEntity(args.intent.entities, 'day-of-schedule');
+		
+		if (result) {
+			logger.info("schedule: " + result.entity);
+		}
+		logger.info("schedule");
+		
+}).triggerAction({
+    matches: 'schedule'
+});
