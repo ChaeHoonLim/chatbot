@@ -28,9 +28,18 @@ send Receipts, and use Carousels.
 
 -----------------------------------------------------------------------------*/
 require('dotenv').config('./.env');
-var restify = require('restify');
-var builder = require('./core/');
+var restify     = require('restify');
+var builder     = require('./core/');
+const log4js    = require('log4js');
+var logger      = log4js.getLogger('worker');
 
+// log4j setting
+log4js.configure({
+    appenders: {
+      out: { type: 'console' }
+    },
+    categories: { default: { appenders: ['out'], level: 'debug' } }
+  });
 //=========================================================
 // Bot Setup
 //=========================================================
@@ -54,6 +63,10 @@ var connector = new builder.ChatConnector({
 });
 
 var bot = new builder.UniversalBot(connector).set('storage', inMemoryStorage); // Register in memory storage;
+
+var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);
+bot.recognizer(recognizer);
+
 server.post('/api/messages', connector.listen());
 
 
@@ -460,3 +473,69 @@ bot.dialog('/weather', [
     }
 ]);
 bot.beginDialogAction('weather', '/weather');   // <-- no 'matches' option means this can only be triggered by a button.
+
+
+bot.dialog('route', function (session, args) {
+    var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'poi-name');
+    var entity;
+
+    if (!result || !result.entity) {
+        return;
+    }       
+    entity = result.entity.replace(/ /g, "");  /* replace white space. */
+    logger.info("route: " + entity);
+   
+}).triggerAction({
+matches: 'route'
+});
+
+bot.dialog('schedule', function (session, args) {
+    var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'day-of-schedule');
+    var entity;
+    
+    if (!result && !result.entity) {         
+        return;    
+    }      
+    entity = result.entity.replace(/ /g, "");  /* replace white space. */
+    logger.info("schedule: " + entity);    
+/*
+    httpOption = {
+        host: process.env.THIRD_PARTY_SERVER_CALENDAR_IP,
+        path: process.env.THIRD_PARTY_SERVER_CALENDAR_URI,
+        port: process.env.THIRD_PARTY_SERVER_CALENDAR_PORT,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    var url = "http://" + process.env.THIRD_PARTY_SERVER_CALENDAR_IP + ":" 
+            + process.env.THIRD_PARTY_SERVER_CALENDAR_PORT 
+            + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
+            
+    var res = syncHttpClient('POST', url, {
+        json: { 'hello': 'world' }
+    });
+    var data = JSON.parse(res.getBody('utf8'));
+
+
+    logger.info("[response]" + data.msg);
+*/
+
+    var msg = new builder.Message(session)
+        .textFormat(builder.TextFormat.xml)
+        .attachments([
+            new builder.HeroCard(session)
+                .title("hello world")
+                .subtitle("Space Needle")
+                .text("The <b>Space Needle</b> is an observation tower in Seattle, Washington, a landmark of the Pacific Northwest, and an icon of Seattle.")
+                .images([
+                    builder.CardImage.create(session, "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Seattlenighttimequeenanne.jpg/320px-Seattlenighttimequeenanne.jpg")
+                ])
+                .tap(builder.CardAction.openUrl(session, "https://en.wikipedia.org/wiki/Space_Needle"))
+        ]);
+    session.send(msg);
+    session.endDialog();	
+}).triggerAction({
+matches: 'schedule'
+});
