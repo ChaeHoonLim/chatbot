@@ -31,6 +31,7 @@ require('dotenv').config('./.env');
 var restify     = require('restify');
 var builder     = require('./core/');
 const log4js    = require('log4js');
+var utils       = require('./utils/util');
 var logger      = log4js.getLogger('worker');
 
 // log4j setting
@@ -62,7 +63,25 @@ var connector = new builder.ChatConnector({
     appPassword: process.env.MICROSOFT_APP_PASSWORD
 });
 
-var bot = new builder.UniversalBot(connector).set('storage', inMemoryStorage); // Register in memory storage;
+//var bot = new builder.UniversalBot(connector).set('storage', inMemoryStorage); // Register in memory storage;
+
+var bot = new builder.UniversalBot(connector, function (session) {
+    if (hasAudioAttachment(session)) {
+        var stream = getAudioStreamFromMessage(session.message);
+        speechService.getTextFromAudioStream(stream)
+            .then(function (text) {
+                session.send(processText(text));
+            })
+            .catch(function (error) {
+                session.send('Oops! Something went wrong. Try again later.');
+                console.error(error);
+            });
+    } else {
+        session.send('Did you upload an audio file? I\'m more of an audible person. Try sending me a wav file');
+    }
+}); // Register in memory storage;
+bot.set('storage', inMemoryStorage); // Register in memory storage;
+
 
 var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);
 bot.recognizer(recognizer);
@@ -137,7 +156,7 @@ bot.beginDialogAction('help', '/help', { matches: /^help/i });
 //=========================================================
 // Bots Dialogs
 //=========================================================
-
+/*
 bot.dialog('/', [
     function (session) {
         // Send a greeting and show help.
@@ -161,7 +180,7 @@ bot.dialog('/', [
         session.send("Ok... See you later!");
     }
 ]);
-
+*/
 bot.dialog('/menu', [
     function (session) {
         builder.Prompts.choice(session, "What demo would you like to run?", "prompts|picture|cards|list|carousel|receipt|actions|(quit)");
@@ -539,3 +558,4 @@ bot.dialog('schedule', function (session, args) {
 }).triggerAction({
 matches: 'schedule'
 });
+
