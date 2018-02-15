@@ -33,6 +33,8 @@ var builder     = require('./core/');
 const log4js    = require('log4js');
 var utils       = require('./utils/util');
 var logger      = log4js.getLogger('worker');
+var speechService = require('./speech-service.js');
+
 
 // log4j setting
 log4js.configure({
