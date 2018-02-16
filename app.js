@@ -31,6 +31,7 @@ require('dotenv').config('./.env');
 var restify     = require('restify');
 var builder     = require('./core/');
 const log4js    = require('log4js');
+var needle = require('needle');
 var logger      = log4js.getLogger('worker');
 var speechService = require('./speech-service.js');
 
@@ -572,6 +573,7 @@ matches: 'schedule'
     Utils
 */
 function hasAudioAttachment(session) {
+    logger.debug("[attachment-size]" + session.message.attachments.length);
     return session.message.attachments.length > 0 &&
         (session.message.attachments[0].contentType === 'audio/wav' ||
             session.message.attachments[0].contentType === 'application/octet-stream');
