@@ -72,14 +72,17 @@ var bot = new builder.UniversalBot(connector, function (session) {
         var stream = getAudioStreamFromMessage(session.message);
         speechService.getTextFromAudioStream(stream)
             .then(function (text) {
+
+                
                 session.send(processText(text));
             })
-            .catch(function (error) {
+            .catch(function (error) { 
                 session.send('Oops! Something went wrong. Try again later.');
                 console.error(error);
             });
     } else {
-        session.send('Did you upload an audio file? I\'m more of an audible person. Try sending me a wav file');
+        logger.debug(session);
+        session.send('잘못보냈습니다.');
     }
 }); // Register in memory storage;
 bot.set('storage', inMemoryStorage); // Register in memory storage;
@@ -556,6 +559,15 @@ bot.dialog('schedule', function (session, args) {
                 .tap(builder.CardAction.openUrl(session, "https://en.wikipedia.org/wiki/Space_Needle"))
         ]);
     session.send(msg);
+
+    /* Do not work */
+    msg = new builder.Message(session)
+    .speak('This is the text that will be spoken.')
+    .inputHint(builder.InputHint.acceptingInput);
+
+    session.say('Please hold while I calculate a response.', 
+    'Please hold while I calculate a response.', 
+    { inputHint: builder.InputHint.ignoringInput });
     session.endDialog();	
 }).triggerAction({
 matches: 'schedule'
