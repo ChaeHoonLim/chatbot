@@ -62,10 +62,11 @@ exports.routeHandler = function (session, args) {
             }, 'message-id': messageId
         },
         'headers': {
-            'Content-Type': 'application/json;charset=UTF-8'
+            'Content-Type': 'application/json;charset=utf-8',
+            'Accept': '*'
         }
     });
-    var resData = JSON.parse(res.getBody('utf8'));
+    var resData = JSON.parse(res.getBody('utf-8'));
     logger.info("[response]" + resData.data.toString());
 
     
@@ -111,10 +112,11 @@ function getReservationInformation(scheduleName) {
             }, 'message-id': 1000
         },
         'headers': {
-            'Content-Type': 'application/json;charset=UTF-8'
+            'Content-Type': 'application/json;charset=utf-8',
+            'Accept': '*'
         }
     });
-    var resData = JSON.parse(res.getBody('utf8'));
+    var resData = JSON.parse(res.getBody('utf-8'));
     logger.info("[response]" + resData.data.toString());
     
     if(resData == null || resData.data[0] == null) {
@@ -142,10 +144,11 @@ function getEtcSchedule(session, destination) {
             }, 'message-id': messageId
         },
         'headers': {
-            'Content-Type': 'application/json;charset=UTF-8'
+            'Content-Type': 'application/json;charset=utf-8',
+            'Accept': '*'
         }
     });
-    var resData = JSON.parse(res.getBody('utf8'));
+    var resData = JSON.parse(res.getBody('utf-8'));
     logger.info("[response]" + resData.data.toString());
     
     if(resData == null || resData.data[0] == null ||  resData.data[0].schedule == null ||  resData.data[0].schedule == '') {
@@ -198,7 +201,8 @@ exports.scheduleHandler = function (session, args) {
             }, 'message-id': messageId
         },
         'headers': {
-            'Content-Type': 'application/json;charset=UTF-8'
+            'Content-Type': 'application/json;charset=utf-8'
+            ,'Accept': '*'
         }
     });
     var resData = JSON.parse(res.getBody('utf-8'));
