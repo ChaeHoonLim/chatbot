@@ -28,21 +28,24 @@ send Receipts, and use Carousels.
 
 -----------------------------------------------------------------------------*/
 require('dotenv').config('./.env');
-var restify         = require('restify');
-var builder         = require('./core/');
-const log4js        = require('log4js');
-var needle          = require('needle');
-var logger          = log4js.getLogger('worker');
-var speechService   = require('./speech-service.js');
+var restify = require('restify');
+var builder = require('./core/');
+const log4js = require('log4js');
+var needle = require('needle');
+var logger = log4js.getLogger('worker');
+var speechService = require('./speech-service.js');
 
+/* user import */
+var util = require('./utils/util.js');
+var intentHandler = require('./action/dialog/intent_handler.js');
 
-// log4j setting
+/* log4j setting */
 log4js.configure({
     appenders: {
-      out: { type: 'console' }
+        out: { type: 'console' }
     },
     categories: { default: { appenders: ['out'], level: 'debug' } }
-  });
+});
 //=========================================================
 // Bot Setup
 //=========================================================
@@ -50,9 +53,9 @@ log4js.configure({
 // Setup Restify Server
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
-   console.log('%s listening to %s', server.name, server.url); 
+    console.log('%s listening to %s', server.name, server.url);
 });
-  
+
 // Bot Storage: Here we register the state storage for your bot. 
 // Default store: volatile in-memory store - Only for prototyping!
 // We provide adapters for Azure Table, CosmosDb, SQL Azure, or you can implement your own!
@@ -66,15 +69,15 @@ var connector = new builder.ChatConnector({
 });
 
 var bot = new builder.UniversalBot(connector, function (session) {
-    if (hasAudioAttachment(session)) {
-        var stream = getAudioStreamFromMessage(session.message);
+    if (util.hasAudioAttachment(session)) {
+        var stream = util.getAudioStreamFromMessage(session.message);
         speechService.getTextFromAudioStream(stream)
             .then(function (text) {
 
-                
-                session.send(processText(text));
+
+                session.send(util.processText(text));
             })
-            .catch(function (error) { 
+            .catch(function (error) {
                 session.send('Oops! Something went wrong. Try again later.');
                 console.error(error);
             });
@@ -95,7 +98,7 @@ server.post('/api/messages', connector.listen());
 //=========================================================
 
 bot.on('conversationUpdate', function (message) {
-   // Check for group conversations
+    // Check for group conversations
     logger.debug(message);
     if (message.address.conversation.isGroup) {
         // Send a hello message when bot is added
@@ -103,8 +106,8 @@ bot.on('conversationUpdate', function (message) {
             message.membersAdded.forEach(function (identity) {
                 if (identity.id === message.address.bot.id) {
                     var reply = new builder.Message()
-                            .address(message.address)
-                            .text("Hello everyone!");
+                        .address(message.address)
+                        .text("Hello everyone!");
                     bot.send(reply);
                 }
             });
@@ -128,8 +131,8 @@ bot.on('contactRelationUpdate', function (message) {
     if (message.action === 'add') {
         var name = message.user ? message.user.name : null;
         var reply = new builder.Message()
-                .address(message.address)
-                .text("Hello %s... Thanks for adding me. Say 'hello' to see some great demos.", name || 'there');
+            .address(message.address)
+            .text("Hello %s... Thanks for adding me. Say 'hello' to see some great demos.", name || 'there');
         bot.send(reply);
     } else {
         // delete their data
@@ -242,7 +245,7 @@ bot.dialog('/prompts', [
         var msg = new builder.Message(session)
             .ntext("I got %d attachment.", "I got %d attachments.", results.response.length);
         results.response.forEach(function (attachment) {
-            msg.addAttachment(attachment);    
+            msg.addAttachment(attachment);
         });
         session.endDialog(msg);
     }
@@ -291,9 +294,9 @@ bot.dialog('/cards', [
                     ])
                     .autoloop(true)
                     .autostart(false)
-                    .shareable(true)                    
+                    .shareable(true)
             ]);
-        session.send(msg);  
+        session.send(msg);
 
         msg = new builder.Message(session)
             .textFormat(builder.TextFormat.xml)
@@ -340,7 +343,7 @@ bot.dialog('/list', [
 bot.dialog('/carousel', [
     function (session) {
         session.send("You can pass a custom message to Prompts.choice() that will present the user with a carousel of cards to select from. Each card can even support multiple actions.");
-        
+
         // Ask the user to select an item from a carousel.
         var msg = new builder.Message(session)
             .textFormat(builder.TextFormat.xml)
@@ -402,13 +405,13 @@ bot.dialog('/carousel', [
                 break;
         }
         session.endDialog('You %s "%s"', action, item);
-    }    
+    }
 ]);
 
 bot.dialog('/receipt', [
     function (session) {
         session.send("You can send a receipts for purchased good with both images and without...");
-        
+
         // Send a receipt with images
         var msg = new builder.Message(session)
             .attachments([
@@ -449,22 +452,22 @@ bot.dialog('/receipt', [
     }
 ]);
 
-bot.dialog('/signin', [ 
-    function (session) { 
+bot.dialog('/signin', [
+    function (session) {
         // Send a signin 
-        var msg = new builder.Message(session) 
-            .attachments([ 
-                new builder.SigninCard(session) 
-                    .text("You must first signin to your account.") 
-                    .button("signin", "http://example.com/") 
-            ]); 
-        session.endDialog(msg); 
-    } 
-]); 
+        var msg = new builder.Message(session)
+            .attachments([
+                new builder.SigninCard(session)
+                    .text("You must first signin to your account.")
+                    .button("signin", "http://example.com/")
+            ]);
+        session.endDialog(msg);
+    }
+]);
 
 
 bot.dialog('/actions', [
-    function (session) { 
+    function (session) {
         session.send("Bots can register global actions, like the 'help' & 'goodbye' actions, that can respond to user input at any time. You can even bind actions to buttons on a card.");
 
         var msg = new builder.Message(session)
@@ -497,137 +500,28 @@ bot.beginDialogAction('weather', '/weather');   // <-- no 'matches' option means
 
 
 
-/*
-    Utils
-*/
-function hasAudioAttachment(session) {
-    logger.debug("[attachment-size]" + session.message.attachments.length);
-    return session.message.attachments.length > 0 &&
-        (session.message.attachments[0].contentType === 'audio/wav' ||
-            session.message.attachments[0].contentType === 'application/octet-stream');
-}
-
-function getAudioStreamFromMessage(message) {
-    var headers = {};
-    var attachment = message.attachments[0];
-    if (checkRequiresToken(message)) {
-        // The Skype attachment URLs are secured by JwtToken,
-        // you should set the JwtToken of your bot as the authorization header for the GET request your bot initiates to fetch the image.
-        // https://github.com/Microsoft/BotBuilder/issues/662
-        connector.getAccessToken(function (error, token) {
-            var tok = token;
-            headers['Authorization'] = 'Bearer ' + token;
-            headers['Content-Type'] = 'application/octet-stream';
-
-            return needle.get(attachment.contentUrl, { headers: headers });
-        });
-    }
-
-    headers['Content-Type'] = attachment.contentType;
-    return needle.get(attachment.contentUrl, { headers: headers });
-}
-
-function checkRequiresToken(message) {
-    return message.source === 'skype' || message.source === 'msteams';
-}
-
-function processText(text) {
-    var result = 'You said: ' + text + '.';
-
-    if (text && text.length > 0) {
-        var wordCount = text.split(' ').filter(function (x) { return x; }).length;
-        result += '\n\nWord Count: ' + wordCount;
-
-        var characterCount = text.replace(/ /g, '').length;
-        result += '\n\nCharacter Count: ' + characterCount;
-
-        var spaceCount = text.split(' ').length - 1;
-        result += '\n\nSpace Count: ' + spaceCount;
-
-        var m = text.match(/[aeiou]/gi);
-        var vowelCount = m === null ? 0 : m.length;
-        result += '\n\nVowel Count: ' + vowelCount;
-    }
-
-    return result;
-}
 /********************************************************************************************
  *
  *   PoC Conditions
  *   by chaehoon.lim 
  * 
  ********************************************************************************************/
-
-bot.dialog('route', function (session, args) {
-    var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'poi-name');
-    var entity;
-
-    if (!result || !result.entity) {
-        return;
-    }       
-    entity = result.entity.replace(/ /g, "");  /* replace white space. */
-    logger.info("route: " + entity);
-   
-}).triggerAction({
-matches: 'route'
+bot.dialog('route', intentHandler.routeHandler).triggerAction({
+    matches: 'route'
 });
-
-bot.dialog('schedule', function (session, args) {
-    var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'day-of-schedule');
-    var entity;
-    
-    if (!result && !result.entity) {         
-        return;    
-    }      
-    entity = result.entity.replace(/ /g, "");  /* replace white space. */
-    logger.info("schedule: " + entity);    
+bot.dialog('schedule', intentHandler.scheduleHandler).triggerAction({
+    matches: 'schedule'
+});
 /*
-    httpOption = {
-        host: process.env.THIRD_PARTY_SERVER_CALENDAR_IP,
-        path: process.env.THIRD_PARTY_SERVER_CALENDAR_URI,
-        port: process.env.THIRD_PARTY_SERVER_CALENDAR_PORT,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    };
-
-    var url = "http://" + process.env.THIRD_PARTY_SERVER_CALENDAR_IP + ":" 
-            + process.env.THIRD_PARTY_SERVER_CALENDAR_PORT 
-            + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
-            
-    var res = syncHttpClient('POST', url, {
-        json: { 'hello': 'world' }
-    });
-    var data = JSON.parse(res.getBody('utf8'));
-
-
-    logger.info("[response]" + data.msg);
-*/
-
-    var msg = new builder.Message(session)
-        .textFormat(builder.TextFormat.xml)
-        .attachments([
-            new builder.HeroCard(session)
-                .title("hello world")
-                .subtitle("Space Needle")
-                .text("The <b>Space Needle</b> is an observation tower in Seattle, Washington, a landmark of the Pacific Northwest, and an icon of Seattle.")
-                .images([
-                    builder.CardImage.create(session, "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Seattlenighttimequeenanne.jpg/320px-Seattlenighttimequeenanne.jpg")
-                ])
-                .tap(builder.CardAction.openUrl(session, "https://en.wikipedia.org/wiki/Space_Needle"))
-        ]);
-    session.send(msg);
-
-    /* Do not work */
-    msg = new builder.Message(session)
-    .speak('This is the text that will be spoken.')
-    .inputHint(builder.InputHint.acceptingInput);
-
-    session.say('Please hold while I calculate a response.', 
-    'Please hold while I calculate a response.', 
-    { inputHint: builder.InputHint.ignoringInput });
-    session.endDialog();	
-}).triggerAction({
-matches: 'schedule'
-});
+        [
+    // Step 1
+    function (session) {
+        builder.Prompts.text(session, 'Hi! What is your name?');
+    },
+    // Step 2
+    function (session, results) {
+        session.endDialog(`Hello ${results.response}!`);
+    }
+]
+ * 
+ */
