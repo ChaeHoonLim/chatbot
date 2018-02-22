@@ -62,7 +62,7 @@ exports.routeHandler = function (session, args) {
             }, 'message-id': messageId
         },
         'headers': {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json;charset=UTF-8'
         }
     });
     var resData = JSON.parse(res.getBody('utf8'));
@@ -111,7 +111,7 @@ function getReservationInformation(scheduleName) {
             }, 'message-id': 1000
         },
         'headers': {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json;charset=UTF-8'
         }
     });
     var resData = JSON.parse(res.getBody('utf8'));
@@ -142,7 +142,7 @@ function getEtcSchedule(session, destination) {
             }, 'message-id': messageId
         },
         'headers': {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json;charset=UTF-8'
         }
     });
     var resData = JSON.parse(res.getBody('utf8'));
@@ -198,10 +198,10 @@ exports.scheduleHandler = function (session, args) {
             }, 'message-id': messageId
         },
         'headers': {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json;charset=UTF-8'
         }
     });
-    var resData = JSON.parse(res.getBody('utf8'));
+    var resData = JSON.parse(res.getBody('utf-8'));
 
 
     logger.info("[response]" + resData.data.toString());
