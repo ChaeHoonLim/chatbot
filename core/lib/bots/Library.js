@@ -384,11 +384,10 @@ var Library = (function (_super) {
                     chaged dialog temporary. 
                     by. chaehoon lim
             */
-           /*
+           
             if (this.dialogs.hasOwnProperty(id) && !replace) {               
                 throw new Error("Dialog[" + id + "] already exists in library[" + this.name + "].");                                
-            }
-            */
+            }            
             if (Array.isArray(dialog) || typeof dialog === 'function') {
                 d = new WaterfallDialog_1.WaterfallDialog(dialog);
             }
