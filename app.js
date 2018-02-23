@@ -57,11 +57,11 @@ var bot = new builder.UniversalBot(connector, function (session) {
         session.send('다시 한번 말씀해 주시겠습니까?');
     }
 }); // Register in memory storage;
-var bot = new builder.UniversalBot(connector);
+// var bot = new builder.UniversalBot(connector);
 bot.set('storage', inMemoryStorage); // Register in memory storage;
 
 var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);
-//bot.recognizer(recognizer);
+bot.recognizer(recognizer);
 
 server.post('/api/messages', connector.listen());
 
@@ -76,8 +76,8 @@ server.get('/api/CustomWebApi', function (req, res, next) {
 // Activity Events
 //=========================================================
 bot.on('conversationUpdate', function (message) {
-    // Check for group conversations
-    logger.debug(message);
+    // Check for group conversations    
+    bot.beginDialog(message.address, 'weather');
     if(!message.address.conversation.isGroup) {
         return;
     }
@@ -281,9 +281,6 @@ bot.dialog('schedule', intentHandler.scheduleHandler).triggerAction({
 
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
     matches: /^hello/i
-});
-bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
-    matches: /^안녕/i
 });
 /*
         [

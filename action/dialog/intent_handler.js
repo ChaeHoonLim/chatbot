@@ -315,6 +315,8 @@ exports.weatherHandler = function (session, args) {
                     ])
             ]);
     
+    session.send(session.message.user.name + "님 안녕하세요." );
+    session.send("오늘 날씨안내 전달해 드리겠습니다." );
     session.send(msg);
 
     /* Do not work 
