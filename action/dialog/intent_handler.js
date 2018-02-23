@@ -253,3 +253,78 @@ exports.scheduleHandler = function (session, args) {
     */
     session.endDialog();
 }
+
+
+
+
+exports.weatherHandler = function (session, args) {
+    logger.debug("user-id: " + session.message.user.id);
+    var url         = process.env.THIRD_PARTY_SERVER_WEATHER_URL + process.env.THIRD_PARTY_SERVER_WEATHER_URI
+    var messageId   = 1000;
+    var res = syncHttpClient('POST', url, {
+        json: { 
+            'data': {
+                'user': session.message.user.id
+                
+            }, 'message-id': messageId
+        },
+        'headers': {
+            'Content-Type': 'application/json;charset=utf-8'
+            ,'Accept': '*'
+        }
+    });
+    var resData = JSON.parse(res.getBody('utf-8'));
+
+
+    logger.info("[response]" + resData.data.toString());
+    var result = resData.data;
+    if(result == null) {
+        session.send("data is null.");
+        return;
+    }
+    var msg = new builder.Message(session)
+            .textFormat(builder.TextFormat.xml)
+            .attachmentLayout(builder.AttachmentLayout.carousel)
+            .attachments([
+                new builder.HeroCard(session)
+                    .title(result[0].date)
+                    .text("최대온도 " + result[0].max + "(으)로 " + result[0].maxcomment + " (입)니다. " + " 최저온도는 " + result[0].min + "(으)로 " + result[0].mincomment + "이겠습니다.")
+                    .images([
+                        builder.CardImage.create(session, result[0].image),
+                    ])
+                    .buttons([
+                        builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
+                    ]),
+                new builder.HeroCard(session)
+                    .title(result[1].date)
+                    .text("최대온도 " + result[1].max + "(으)로 " + result[1].maxcomment + " (입)니다. " + " 최저온도는 " + result[1].min + "(으)로 " + result[1].mincomment + "이겠습니다.")
+                    .images([
+                        builder.CardImage.create(session, result[1].image),
+                    ])
+                    .buttons([
+                        builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
+                    ]),
+                new builder.HeroCard(session)
+                    .title(result[2].date)
+                    .text("최대온도 " + result[2].max + "(으)로 " + result[2].maxcomment + " (입)니다. " + " 최저온도는 " + result[2].min + "(으)로 " + result[2].mincomment + "이겠습니다.")
+                    .images([
+                        builder.CardImage.create(session, result[2].image),
+                    ])
+                    .buttons([
+                        builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
+                    ])
+            ]);
+    
+    session.send(msg);
+
+    /* Do not work 
+    msg = new builder.Message(session)
+        .speak('This is the text that will be spoken.')
+        .inputHint(builder.InputHint.acceptingInput);
+
+    session.say('Please hold while I calculate a response.',
+        'Please hold while I calculate a response.',
+        { inputHint: builder.InputHint.ignoringInput });
+    */
+    session.endDialog();
+}
