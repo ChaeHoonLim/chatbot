@@ -59,47 +59,23 @@ var bot = new builder.UniversalBot(connector, function (session) {
 }); // Register in memory storage;
 // var bot = new builder.UniversalBot(connector);
 bot.set('storage', inMemoryStorage); // Register in memory storage;
-
 var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);
 bot.recognizer(recognizer);
-
 server.post('/api/messages', connector.listen());
-
-/* for proactive */
-server.get('/api/CustomWebApi', function (req, res, next) {     
-    startProactiveDialog(savedAddress);
-    res.send('triggered');
-    next();
-});
-
 //=========================================================
 // Activity Events
 //=========================================================
+var welcomeMap = new Object();
 bot.on('conversationUpdate', function (message) {
     // Check for group conversations    
-    bot.beginDialog(message.address, 'weather');
-    if(!message.address.conversation.isGroup) {
+    logger.debug(message);
+    if(welcomeMap[message.user.id] != null) {
         return;
     }
-    if (message.membersAdded) {
-        message.membersAdded.forEach(function (identity) {
-            if (identity.id === message.address.bot.id) {
-                var reply = new builder.Message()
-                    .address(message.address)
-                    .text("Hello everyone!");
-                bot.send(reply);
-            }
-        });
-    }
-    if (message.membersRemoved) {
-        message.membersRemoved.forEach(function (identity) {
-            if (identity.id === message.address.bot.id) {
-                var reply = new builder.Message()
-                    .address(message.address)
-                    .text("Goodbye");
-                bot.send(reply);
-            }
-        });
+    bot.beginDialog(message.address, 'weather');
+    welcomeMap[message.user.id] = true;
+    if(!message.address.conversation.isGroup) {
+        return;
     }
 });
 
