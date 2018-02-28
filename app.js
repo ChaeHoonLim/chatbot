@@ -271,3 +271,9 @@ bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
 ]
  * 
  */
+bot.customAction({
+    matches: /\/reset|\/restart|\/newsession/gi,
+    onSelectAction: (session, args, next) => {
+        session.endConversation('OK');
+    }
+});
