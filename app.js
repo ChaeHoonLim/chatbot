@@ -1,23 +1,13 @@
-
 require('dotenv').config('./.env');
+var restify = require('restify');
+var builder = require('./core/');
 const log4js = require('log4js');
-
-var restify             = require('restify');
-var builder             = require('./core/');
-var speechService       = require('./speech-service.js');
-var bingClient          = require('bingspeech-api-client/lib/client')
+var needle = require('needle');
+var speechService = require('./speech-service.js');
 
 /* user import */
-var util                = require('./utils/util.js');
-var intentHandler       = require('./action/dialog/intent_handler.js');
-
-//==========================================================
-// Bing Client
-//==========================================================
-if (!process.env.MICROSOFT_SPEECH_API_KEY) {
-    console.log('You need to set a MICROSOFT_SPEECH_API_KEY env var');
-}
-var bing = new bingClient.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
+var util = require('./utils/util.js');
+var intentHandler = require('./action/dialog/intent_handler.js');
 
 /* log4j setting */
 var logger = log4js.getLogger('worker');
@@ -48,25 +38,13 @@ var connector = new builder.ChatConnector({
     appId: process.env.MICROSOFT_APP_ID,
     appPassword: process.env.MICROSOFT_APP_PASSWORD
 });
-
-/*
-    VOICE
-*/
-var bot = new builder.UniversalBot(connector, function (session) {    
+var bot = new builder.UniversalBot(connector, function (session) {
     if (util.hasAudioAttachment(session)) {
         var stream = util.getAudioStreamFromMessage(session.message);
-
         speechService.getTextFromAudioStream(stream)
             .then(function (text) {
-                bing.synthesize('I have a dream').then(response => { 
-                    /* audio is a Buffer in response.wave */ 
-                    var file = path.join('.','hello.wav');
-                    var wstream = fs.createWriteStream(file);
-                    wstream.write(result.wave);
 
-                    console.log("Text To Speech completed. Audio file written to ", file);
-                    sendInline(session, file, 'audio/wav', 'bing-synthesized.wav');
-                });
+
                 session.send(util.processText(text));
             })
             .catch(function (error) {
@@ -88,15 +66,11 @@ server.post('/api/messages', connector.listen());
 //=========================================================
 var welcomeMap = new Object();
 bot.on('conversationUpdate', function (message) {
-    if (message.action != 'add') {
-        logger.debug(message.action);
-        return;        
+    // Check for group conversations    
+    logger.debug(message);
+    if(welcomeMap[message.user.id] != null) {
+        return;
     }
-    var name = message.user ? message.user.name : null;
-    var reply = new builder.Message()
-            .address(message.address)
-            .text("Hello %s... Thanks for adding me.", name || 'there');
-    bot.send(reply);
     bot.beginDialog(message.address, 'weather');
     welcomeMap[message.user.id] = true;
     if(!message.address.conversation.isGroup) {
@@ -135,6 +109,7 @@ bot.dialog('/', function (session, args) {
     }, 5000);
   });
 */
+
 bot.dialog('/help', [
     function (session) {
         session.endDialog("Global commands that are available anytime:\n\n* menu - Exits a demo and returns to the menu.\n* goodbye - End this conversation.\n* help - Displays these commands.");
@@ -296,8 +271,8 @@ bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
  * 
  */
 bot.customAction({
-    matches: /\/reset|\/restart|\/newsession/gi,
+    matches: /^restart/i,
     onSelectAction: (session, args, next) => {
-        session.endConversation('OK. I\'ll start new session');
+        session.endConversation('OK');
     }
 });
