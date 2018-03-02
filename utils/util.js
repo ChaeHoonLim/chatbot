@@ -3,8 +3,10 @@
     by. chaehoon.lim
 */
 
-var needle          = require('needle');
-const log4js        = require('log4js');
+var needle              = require('needle');
+const log4js            = require('log4js');
+var httpClient          = require('http');
+var syncHttpClient      = require('sync-request');
 log4js.configure({
     appenders: {
       out: { type: 'console' }
@@ -101,4 +103,36 @@ exports.processText = function (text) {
         result += '\n\nVowel Count: ' + vowelCount;
     }
     return result;
+}
+
+
+
+exports.getIntentAndEntity = function (session, attrance) {
+    if(attrance == null || attrance == "") {
+        return;
+    }
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_LUIS_URI
+
+    /* luis information */
+    var messageId   =  1000;
+    var res = syncHttpClient('POST', url, {
+        json: { 
+            'data': {
+                'user': session.message.user.id
+                , 'query': attrance
+                
+            }, 'message-id': messageId
+        },
+        'headers': {
+            'Content-Type': 'application/json;charset=utf-8',
+            'Accept': '*'
+        }
+    });
+    var resData = JSON.parse(res.getBody('utf-8'));
+    logger.info("[response]" + resData.data.toString());
+    
+    if(resData == null || resData.data == null) {
+        return null;
+    }
+    return resData.data;      
 }

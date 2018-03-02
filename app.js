@@ -43,9 +43,12 @@ var bot = new builder.UniversalBot(connector, function (session) {
         var stream = util.getAudioStreamFromMessage(session.message);
         speechService.getTextFromAudioStream(stream)
             .then(function (text) {
-
-
-                session.send(util.processText(text));
+                var data = util.getIntentAndEntity(session, text);
+                if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
+                    intentHandler.weatherHandler(session);
+                }else {
+                    session.send('다시 한번 말씀해 주시겠습니까? 잘 인식하지 못했습니다.');
+                }
             })
             .catch(function (error) {
                 session.send('Oops! Something went wrong. Try again later.');
@@ -254,8 +257,11 @@ bot.dialog('schedule', intentHandler.scheduleHandler).triggerAction({
     matches: 'schedule'
 });
 
-bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
+bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
     matches: /^hello/i
+});
+bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
+    matches: 'weather'
 });
 /*
         [
