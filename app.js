@@ -1,4 +1,4 @@
-
+﻿
 require('dotenv').config('./.env');
 var restify = require('restify');
 var builder = require('./core/');
@@ -272,7 +272,7 @@ bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
  * 
  */
 bot.customAction({
-    matches: /\/reset|\/restart|\/newsession/gi,
+    matches: /^restart/i,
     onSelectAction: (session, args, next) => {
         session.endConversation('OK');
     }
