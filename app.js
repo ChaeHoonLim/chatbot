@@ -40,7 +40,7 @@ var connector = new builder.ChatConnector({
 });
 var bot = new builder.UniversalBot(connector, function (session) {
     if (util.hasAudioAttachment(session)) {
-        var stream = util.getAudioStreamFromMessage(session.message);
+        var stream = util.getAudioStreamFromMessage(connector, session.message);
         speechService.getTextFromAudioStream(stream)
             .then(function (text) {
                 var data = util.getIntentAndEntity(session, text);

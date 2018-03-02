@@ -65,7 +65,7 @@ function checkRequiresToken(message) {
     return message.source === 'skype' || message.source === 'msteams';
 }
 
-exports.getAudioStreamFromMessage = function (message) {
+exports.getAudioStreamFromMessage = function (connector, message) {
     var headers = {};
     var attachment = message.attachments[0];
     if (checkRequiresToken(message)) {
