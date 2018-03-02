@@ -21,6 +21,7 @@
     "url": "git+https://github.com/Microsoft/BotBuilder-Samples.git"
   },
   "dependencies": {
+    "bingspeech-api-client": "^2.4.1",
     "bluebird": "^3.5.1",
     "botbuilder": "^3.14.0",
     "dotenv": "^5.0.0",

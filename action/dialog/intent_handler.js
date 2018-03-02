@@ -276,7 +276,7 @@ exports.weatherHandler = function (session, args) {
     var resData = JSON.parse(res.getBody('utf-8'));
 
 
-    logger.info("[response]" + resData.data.toString());
+    logger.info("[response]" + resData.data);
     var result = resData.data;
     if(result == null) {
         session.send("data is null.");

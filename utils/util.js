@@ -3,6 +3,7 @@
     by. chaehoon.lim
 */
 
+var needle          = require('needle');
 const log4js        = require('log4js');
 log4js.configure({
     appenders: {
@@ -58,6 +59,10 @@ exports.hasAudioAttachment = function (session) {
             session.message.attachments[0].contentType === 'application/octet-stream');
 }
 
+function checkRequiresToken(message) {
+    return message.source === 'skype' || message.source === 'msteams';
+}
+
 exports.getAudioStreamFromMessage = function (message) {
     var headers = {};
     var attachment = message.attachments[0];
@@ -76,10 +81,6 @@ exports.getAudioStreamFromMessage = function (message) {
 
     headers['Content-Type'] = attachment.contentType;
     return needle.get(attachment.contentUrl, { headers: headers });
-}
-
-exports.checkRequiresToken = function (message) {
-    return message.source === 'skype' || message.source === 'msteams';
 }
 
 exports.processText = function (text) {
