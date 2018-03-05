@@ -263,6 +263,9 @@ bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
     matches: 'weather'
 });
+bot.dialog('syntherise', speechService.stt).triggerAction({
+    matches: /^tts/i
+});
 /*
         [
     // Step 1

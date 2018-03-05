@@ -99,6 +99,7 @@ exports.routeHandler = function (session, args) {
 
     /* Reservation */
     if(etcObj == null || etcObj.schedule == null) {
+        console.log("etc schedule is null.");
         session.endDialog();
         return;
     }
@@ -119,7 +120,7 @@ function printEVStation(data, session) {
             .subtitle("EV 충전소를 안내해 드립니다.")
             .text("EV 충전소 페이지로 이동합니다.")
             .images([builder.CardImage.create(session, data.ev[i].img)])
-            .buttons([builder.CardAction.openUrl(session, data.ev[i], "충전소 정보보기")]);
+            .buttons([builder.CardAction.openUrl(session, data.ev[i].url, "충전소 정보보기")]);
         arr.push(temp);
     }    
     msg = new builder.Message(session)
@@ -184,6 +185,7 @@ function getEtcSchedule(session, destination) {
     var qStartDate  = util.getCurrentDateTime(0);
     var qEndDate    = util.getEndDateTime(0);
     var messageId   =  1004;
+    console.log("start: " + qStartDate + ", end: " + qEndDate);
     var res = syncHttpClient('POST', url, {
         json: { 
             'data': {

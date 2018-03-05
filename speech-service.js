@@ -1,5 +1,6 @@
 var uuid = require('node-uuid'),
     request = require('request');
+var builder = require('./core/');
 
 var SPEECH_API_KEY = process.env.MICROSOFT_SPEECH_API_KEY;
 
@@ -82,4 +83,36 @@ function streamToText(stream, resolve, reject) {
             resolve(JSON.parse(body).header.name);
         }
     }));
+}
+
+
+
+var     client  = require('bingspeech-api-client/lib/client');
+const   fs      = require('fs');
+exports.stt = function (session) {
+    /*
+        if (!process.env.MICROSOFT_SPEECH_API_KEY) {
+            console.log('You need to set a MICROSOFT_SPEECH_API_KEY env var');
+        }    
+    var bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
+    let bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
+    bing.synthesize('I have a dream').then(response => { 
+        console.log('Text to Speech completed. Audio file written to');
+    });
+    
+    bing.synthesize("hello world").then(result => {
+        var file        = "./speech.wav";
+        var wstream     = fs.createWriteStream(file);
+        wstream.write(result.wave);
+        wstream.close();
+        
+        session.send(wstream,'audio/wav','bing-synthesized.wav');
+
+    });
+    
+*/
+    var msg = new builder.Message(session)       
+        .speak("hello world")
+        .inputHint(builder.InputHint.acceptingInput);
+    session.send(msg);
 }

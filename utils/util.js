@@ -16,9 +16,16 @@ log4js.configure({
 var logger          = log4js.getLogger('worker');
 
 function getDate(days) {
-    var result = new Date();
-    result.setDate(result.getDate() + days);
-    result.setHours(result.getHours() + 9);        /* UTC to GMT in Azure */
+    var result      = new Date();    
+    var offset      = result.getTimezoneOffset();
+    var standard    = -540;                         /* Standard GMT TimeZone */
+    result.setDate(result.getDate() + days);    
+
+    if(offset != standard) {                        /* convert timzone to GMT */
+        offset = (offset - standard) / 60;
+        result.setHours(result.getHours() + 9);        
+    }    
+    
     return result;
   }
   exports.getCurrentDateTime = function (days) {
