@@ -37,7 +37,7 @@ exports.routeHandler = function (session, args) {
     } else if(entity.toString() == '인천공항') { 
         route = "2";
         etcObj = getEtcSchedule(session, entity.toString());
-    } else if(entity.toString() == '양재터미널') { 
+    } else if(entity.toString() == '양재터미널' || entity.toString() == '양재버스터미널') { 
         route = "3";
         etcObj = getEtcSchedule(session, entity.toString());
     } else if(entity.toString() == '용산역') { 
@@ -91,7 +91,13 @@ exports.routeHandler = function (session, args) {
     session.send(msg);
     session.send("목적지까지 " + data.duration + "분 소요될 예정이며, 요금은 " + data.fee + "원 입니다.");
 
+    /* EV */
+    printEVStation(data, session);
 
+    /* EV */
+    printRecommendPoi(data, session);
+
+    /* Reservation */
     if(etcObj == null || etcObj.schedule == null) {
         session.endDialog();
         return;
@@ -100,6 +106,50 @@ exports.routeHandler = function (session, args) {
     
     session.send(etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다.");
     session.endDialog();
+}
+function printEVStation(data, session) {
+    if(data.ev == null) {
+         return;
+    }
+    var msg;
+    for(var i = 0; i<data.ev.length; i++) {
+        msg = new builder.Message(session)
+            .textFormat(builder.TextFormat.xml)
+            .attachments([
+                new builder.HeroCard(session)
+                    .title("가까운 EV 충전소 " + (i+1))
+                    .subtitle("EV 충전소를 안내해 드립니다.")
+                    .text("EV 충전소 페이지로 이동합니다.")
+                    .buttons([
+                        builder.CardAction.openUrl(session, data.ev[i], "충전소 정보보기")
+                    ])
+            ]);
+        session.send(msg);
+    }       
+}
+function printRecommendPoi(data, session) {
+    if(data.recommend == null) {
+        return;
+   }
+   var msg;
+   for(var i = 0; i<data.recommend.length; i++) {
+       msg = new builder.Message(session)
+           .textFormat(builder.TextFormat.xml)
+           .attachments([
+               new builder.HeroCard(session)
+                   .title("가까운 미슐랭 맛집 '" + data.recommend[i].name + "'")
+                   .subtitle(data.recommend[i].type)
+                   .text("추천 맛집 페이지로 이동합니다.")
+                   .images([
+                    builder.CardImage.create(session, data.recommend[i].img)
+                ])
+                   .buttons([
+                       builder.CardAction.openUrl(session, data.recommend[i].url, "'" + data.recommend[i].name + "' 정보보기")
+                   ])
+           ]);    
+       session.send(msg);
+       session.send("목적지 근처에 추천맛집이 검색되었습니다.");
+   }       
 }
 function getReservationInformation(scheduleName) {
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_RESERVATION_URI
