@@ -119,7 +119,6 @@ function printEVStation(data, session) {
             .title(data.ev[i].name + " EV 충전소")
             .subtitle("EV 충전소를 안내해 드립니다.")
             .text("EV 충전소 페이지로 이동합니다.")
-            .images([builder.CardImage.create(session, data.ev[i].img)])
             .buttons([builder.CardAction.openUrl(session, data.ev[i].url, "충전소 정보보기")]);
         arr.push(temp);
     }    
