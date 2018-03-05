@@ -39,25 +39,32 @@ var connector = new builder.ChatConnector({
     appPassword: process.env.MICROSOFT_APP_PASSWORD
 });
 var bot = new builder.UniversalBot(connector, function (session) {
-    if (util.hasAudioAttachment(session)) {
-        var stream = util.getAudioStreamFromMessage(connector, session.message);
-        speechService.getTextFromAudioStream(stream)
-            .then(function (text) {
-                var data = util.getIntentAndEntity(session, text);
-                if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
-                    intentHandler.weatherHandler(session);
-                }else {
-                    session.send('다시 한번 말씀해 주시겠습니까? 잘 인식하지 못했습니다.');
-                }
-            })
-            .catch(function (error) {
-                session.send('Oops! Something went wrong. Try again later.');
-                console.error(error);
-            });
-    } else {
+    if(util.hasAudioAttachment(session) == false) {
         logger.debug(session);
         session.send('다시 한번 말씀해 주시겠습니까?');
+        return;
     }
+    var stream = util.getAudioStreamFromMessage(connector, session.message);
+    speechService.getTextFromAudioStream(stream)
+        .then(function (text) {
+            var data = util.getIntentAndEntity(session, text);
+            if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
+                intentHandler.weatherHandler(session);
+            } else if(data.intent == 'route') {
+                console.log(data.intent + ", " + data.entity);
+                intentHandler.routeGuidance(session, data.entity);
+            } else if(data.intent == 'schedule') {
+                console.log(data.intent + ", " + data.entity);
+                intentHandler.getSchedule(session, data.entity);
+            } else {
+                session.send('다시 한번 말씀해 주시겠습니까? 잘 인식하지 못했습니다.');
+            }
+        })
+        .catch(function (error) {
+            session.send('Oops! Something went wrong. Try again later.');
+            console.error(error);
+        });
+
 }); // Register in memory storage;
 // var bot = new builder.UniversalBot(connector);
 bot.set('storage', inMemoryStorage); // Register in memory storage;

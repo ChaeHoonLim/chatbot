@@ -84,10 +84,11 @@ exports.getAudioStreamFromMessage = function (connector, message) {
             var tok = token;
             headers['Authorization'] = 'Bearer ' + token;
             headers['Content-Type'] = 'application/octet-stream';
-
+            
             return needle.get(attachment.contentUrl, { headers: headers });
         });
     }
+    console.log("URL: " + attachment.contentUrl);
 
     headers['Content-Type'] = attachment.contentType;
     return needle.get(attachment.contentUrl, { headers: headers });

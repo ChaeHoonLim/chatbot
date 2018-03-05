@@ -396,3 +396,210 @@ exports.weatherHandler = function (session, args) {
     */
     session.endDialog();
 }
+
+
+
+
+exports.routeGuidance = function (session, entity) {
+    
+    if(entity != null) {
+        entity = entity.replace(/ /g, "");  /* replace white space. */
+    }
+
+    logger.debug("user-id: " + session.message.user.id);
+    logger.info("route: " + entity);
+
+    var messageId   = 1000;
+    var route       = "1";
+    var etcObj      = null;
+    if (entity == null) {
+        session.send("검색된 목적지가 없습니다.");
+        session.endDialog();
+        return;
+    } else if(entity.toString() == '집') {               /* poi search */
+        route = "1";
+    } else if(entity.toString() == '인천공항') { 
+        route = "2";
+        etcObj = getEtcSchedule(session, entity.toString());
+    } else if(entity.toString() == '양재터미널' || entity.toString() == '양재버스터미널') { 
+        route = "3";
+        etcObj = getEtcSchedule(session, entity.toString());
+    } else if(entity.toString() == '용산역') { 
+        route = "4";
+        etcObj = getEtcSchedule(session, entity.toString());
+    } else if(entity.toString() == '현대엠엔소프트' || entity.toString() == '회사') { 
+        route = "5";
+    } else {        
+        session.send("검색된 목적지가 없습니다.");
+        session.endDialog();
+        return;
+    }
+
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_ROUTE_URI
+
+    var res = syncHttpClient('POST', url, {
+        json: { 
+            'data': {
+                'user': session.message.user.id
+                ,'route': route
+                
+            }, 'message-id': messageId
+        },
+        'headers': {
+            'Content-Type': 'application/json;charset=utf-8',
+            'Accept': '*'
+        }
+    });
+    var resData = JSON.parse(res.getBody('utf-8'));
+    logger.info("[response]" + resData.data.toString());
+
+    
+    if(resData == null || resData.data[0] == null) {        
+        session.send("검색된 목적지가 없습니다.");
+        session.endDialog();
+        return;
+    }
+    data = resData.data[0];
+
+    var msg = new builder.Message(session)
+        .textFormat(builder.TextFormat.xml)
+        .attachments([
+            new builder.HeroCard(session)
+            .title("목적지: " + entity.toString())
+            .text("'" + entity.toString() + "'까지 " + util.getTime(data.duration) + "에 도착 예정입니다.")
+            .images([
+                builder.CardImage.create(session, data.url)
+                    
+            ]).tap(builder.CardAction.showImage(session, data.url))
+        ]);
+    session.send(msg);
+    session.send("목적지까지 " + data.duration + "분 소요될 예정이며, 요금은 " + data.fee + "원 입니다.");
+
+    /* EV */
+    printEVStation(data, session);
+
+    /* EV */
+    printRecommendPoi(data, session);
+
+    /* Reservation */
+    if(etcObj == null || etcObj.schedule == null) {
+        console.log("etc schedule is null.");
+        session.endDialog();
+        return;
+    }
+    etcObj = getReservationInformation(etcObj.schedule);
+    
+    session.send(etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다.");
+    session.endDialog();
+}
+
+exports.getSchedule = function (session, entity) {
+    var qStartDate;
+    var qEndDate;
+    var messageId       = 1001;
+
+    if(entity != null) {
+        entity = entity.replace(/ /g, "");  /* replace white space. */
+    }
+    
+    if(entity == null) {
+        qStartDate = util.getStartDateTime(0);
+        qEndDate    = util.getEndDateTime(0);
+    } else if(entity.toString() == '오늘') {
+        qStartDate = util.getStartDateTime(0);
+        qEndDate    = util.getEndDateTime(0);
+    } else if(entity.toString() == '내일') {
+        qStartDate  = util.getStartDateTime(1);
+        qEndDate    = util.getEndDateTime(1);
+    } else {
+        qStartDate  = entity + " 00:00";
+        qEndDate    = entity + " 23:59";
+    }
+    logger.info("entity: " + entity);
+    logger.info("query: " + qStartDate + "~" + qEndDate);
+    logger.debug("user-id: " + session.message.user.id);
+
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
+
+    var res = syncHttpClient('POST', url, {
+        json: { 
+            'data': {
+                'user': session.message.user.id
+                ,'start-date': qStartDate
+                ,'end-date': qEndDate
+                
+            }, 'message-id': messageId
+        },
+        'headers': {
+            'Content-Type': 'application/json;charset=utf-8'
+            ,'Accept': '*'
+        }
+    });
+    var resData = JSON.parse(res.getBody('utf-8'));
+
+
+    logger.info("[response]" + resData.data.toString());
+
+    data = resData.data[0];
+    if(data == null) {
+        var msg = new builder.Message(session)
+        .textFormat(builder.TextFormat.xml)
+        .attachments([
+            new builder.HeroCard(session)
+                .title("일정이 없습니다.")
+                .subtitle("일정을 등록하실 수 있게 도와드릴 수 있습니다.")
+                .text("일정 등록 페이지로 이동합니다.")
+                .buttons([
+                    builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_INSERT_URL + "/" + session.message.user.id, "일정 등록하기")
+                ])
+        ]);
+        session.send(msg);
+        session.endDialog();
+        return;
+    }
+    var msg;
+
+    if(data.location != '-' && data.location != 0) {
+
+        var command;
+        if(data.location == '1') {
+            command = "집으로 가자";
+        } else if(data.location == '2') {
+            command = "인천공항으로 가자";
+        } else if(data.location == '3') {
+            command = "양재터미널로 가자";
+        } else if(data.location == '4') {
+            command = "용산역으로 가자";
+        } else if(data.location == '5') {
+            command = "현대엠엔소프트로 가자";
+        }
+
+        msg = new builder.Message(session)
+        .textFormat(builder.TextFormat.xml)
+        .attachments([
+            new builder.HeroCard(session)
+                .title(data.title)
+                .subtitle(data.start_time + " ~ " + data.end_time)
+                .text("등록된 장소로 길안내를 해드릴 수 있습니다.")
+                .images([
+                    builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
+                ])
+                .buttons([
+                    builder.CardAction.imBack(session, command, "길안내"),
+                ])
+                .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
+        ]);
+        builder.Prompts.choice(session, msg, "1|2|3|4|5");
+    } else {
+        msg = new builder.Message(session)
+        .textFormat(builder.TextFormat.xml)
+        .attachments([
+            new builder.HeroCard(session)
+                .title(data.title)
+                .subtitle(data.start_time + " ~ " + data.end_time)
+                .text(data.description)
+                .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
+        ]);
+        session.send(msg);
+    }    
+}

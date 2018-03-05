@@ -57,7 +57,7 @@ function streamToText(stream, resolve, reject) {
     var speechApiUrl = [
         'https://speech.platform.bing.com/recognize?scenarios=smd',
         'appid=D4D52672-91D7-4C74-8AD8-42B1D98141A5',
-        'locale=en-US',
+        'locale=ko-KR',     /* ko-KR 한국어 */
         'device.os=wp7',
         'version=3.0',
         'format=json',
@@ -109,10 +109,24 @@ exports.stt = function (session) {
         session.send(wstream,'audio/wav','bing-synthesized.wav');
 
     });
-    
-*/
+    */
+   let bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
+   
+   bing.synthesize("hello world").then(result => {
+       var file        = "./speech.wav";
+       var wstream     = fs.createWriteStream(file);
+       wstream.write(result.wave);
+       wstream.close();
+       
+       session.send(wstream,'audio/wav','bing-synthesized.wav');
+
+   });
+
+   /*
+
     var msg = new builder.Message(session)       
         .speak("hello world")
         .inputHint(builder.InputHint.acceptingInput);
     session.send(msg);
+    */
 }
