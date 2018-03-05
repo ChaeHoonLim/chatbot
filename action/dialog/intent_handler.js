@@ -152,7 +152,7 @@ function printRecommendPoi(data, session) {
    session.send("목적지 근처에 추천맛집이 검색되었습니다.");
 }
 function getReservationInformation(scheduleName) {
-    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_RESERVATION_URI
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_RESERVATION_URI;
 
     /* schedule information */
     var res = syncHttpClient('POST', url, {
@@ -178,7 +178,7 @@ function getEtcSchedule(session, destination) {
     if(destination != "인천공항" && destination != "양재터미널" && destination != "용산역") {
         return;
     }
-    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
 
     /* schedule information */
     var qStartDate  = util.getCurrentDateTime(0);
@@ -210,7 +210,6 @@ function getEtcSchedule(session, destination) {
 exports.scheduleHandler = function (session, args) {
     var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'day-of-schedule');
     var entity;
-
     
     if(result != null) {
         entity = result.entity.replace(/ /g, "");  /* replace white space. */
@@ -240,7 +239,7 @@ exports.scheduleHandler = function (session, args) {
     logger.info("query: " + qStartDate + "~" + qEndDate);
     logger.debug("user-id: " + session.message.user.id);
 
-    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
 
     var res = syncHttpClient('POST', url, {
         json: { 
@@ -278,36 +277,52 @@ exports.scheduleHandler = function (session, args) {
         session.endDialog();
         return;
     }
-    
-    var msg = new builder.Message(session)
+    var msg;
+
+    if(data.location != '-' && data.location != 0) {
+
+        var command;
+        if(data.location == '1') {
+            command = "집으로 가자";
+        } else if(data.location == '2') {
+            command = "인천공항으로 가자";
+        } else if(data.location == '3') {
+            command = "양재터미널로 가자";
+        } else if(data.location == '4') {
+            command = "용산역으로 가자";
+        } else if(data.location == '5') {
+            command = "현대엠엔소프트로 가자";
+        }
+
+        msg = new builder.Message(session)
+        .textFormat(builder.TextFormat.xml)
+        .attachments([
+            new builder.HeroCard(session)
+                .title(data.title)
+                .subtitle(data.start_time + " ~ " + data.end_time)
+                .text("등록된 장소로 길안내를 해드릴 수 있습니다.")
+                .images([
+                    builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
+                ])
+                .buttons([
+                    builder.CardAction.imBack(session, command, "길안내"),
+                ])
+                .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
+        ]);
+        builder.Prompts.choice(session, msg, "1|2|3|4|5");
+    } else {
+        msg = new builder.Message(session)
         .textFormat(builder.TextFormat.xml)
         .attachments([
             new builder.HeroCard(session)
                 .title(data.title)
                 .subtitle(data.start_time + " ~ " + data.end_time)
                 .text(data.description)
-                .images([
-                    builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
-                ])
                 .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
         ]);
-    session.send(msg);
-
-    /* Do not work 
-    msg = new builder.Message(session)
-        .speak('This is the text that will be spoken.')
-        .inputHint(builder.InputHint.acceptingInput);
-
-    session.say('Please hold while I calculate a response.',
-        'Please hold while I calculate a response.',
-        { inputHint: builder.InputHint.ignoringInput });
-    */
-    session.endDialog();
+        session.send(msg);
+    }    
 }
-
-
-
-
 exports.weatherHandler = function (session, args) {
     logger.debug("user-id: " + session.message.user.id);
     var url         = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_WEATHER_URI
