@@ -18,6 +18,7 @@ var logger          = log4js.getLogger('worker');
 function getDate(days) {
     var result = new Date();
     result.setDate(result.getDate() + days);
+    result.setHours(result.getHours() + 9);        /* UTC to GMT in Azure */
     return result;
   }
   exports.getCurrentDateTime = function (days) {
