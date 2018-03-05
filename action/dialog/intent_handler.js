@@ -324,6 +324,7 @@ exports.scheduleHandler = function (session, args) {
     }    
 }
 exports.weatherHandler = function (session, args) {
+   session.send("오늘의 날씨정보를 전달해 드립니다." );
     logger.debug("user-id: " + session.message.user.id);
     var url         = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_WEATHER_URI
     var messageId   = 1000;
@@ -379,10 +380,7 @@ exports.weatherHandler = function (session, args) {
                     .buttons([
                         builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
                     ])
-            ]);
-    
-    session.send(session.message.user.name + "님 안녕하세요." );
-    session.send("오늘 날씨안내 전달해 드리겠습니다." );
+            ]);    
     session.send(msg);
 
     /* Do not work 
@@ -393,8 +391,7 @@ exports.weatherHandler = function (session, args) {
     session.say('Please hold while I calculate a response.',
         'Please hold while I calculate a response.',
         { inputHint: builder.InputHint.ignoringInput });
-    */
-    session.endDialog();
+    */   
 }
 
 
@@ -602,4 +599,39 @@ exports.getSchedule = function (session, entity) {
         ]);
         session.send(msg);
     }    
+}
+
+
+exports.getNews = function (session) {
+    
+    session.send("오늘의 News를 전달해 드립니다." );
+    var url = "https://newsapi.org/v2/top-headlines?sources=cnn&apiKey=c6b04ec39449435cac90089e0d0dfca6";
+
+    var res = syncHttpClient('GET', url, {
+        'headers': {
+            'Content-Type': 'application/json;charset=utf-8'
+            ,'Accept': '*'
+        }
+    });
+    var resData = JSON.parse(res.getBody('utf-8'));
+
+    var arr = [];
+    var data = resData.articles;
+    if(data == null) {        
+        return;
+    }    
+    for(var i = 0; i<data.length; i++) {
+        var temp = new builder.HeroCard(session)
+            .title(data[i].title)
+            .subtitle(data[i].source.name)
+            .text(data[i].description)
+            .images([builder.CardImage.create(session, data[i].urlToImage)])
+            .buttons([builder.CardAction.openUrl(session, data[i].url, "기사보기")]);
+        arr.push(temp);  
+    }
+    msg = new builder.Message(session)
+    .textFormat(builder.TextFormat.xml)
+    .attachmentLayout(builder.AttachmentLayout.carousel)
+    .attachments(arr); 
+    session.send(msg);
 }

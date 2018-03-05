@@ -1,13 +1,14 @@
 require('dotenv').config('./.env');
-var restify = require('restify');
-var builder = require('./core/');
-const log4js = require('log4js');
-var needle = require('needle');
-var speechService = require('./speech-service.js');
+
+var restify         = require('restify');
+var builder         = require('./core/');
+const log4js        = require('log4js');
+var needle          = require('needle');
+var speechService   = require('./speech-service.js');
 
 /* user import */
-var util = require('./utils/util.js');
-var intentHandler = require('./action/dialog/intent_handler.js');
+var util            = require('./utils/util.js');
+var intentHandler   = require('./action/dialog/intent_handler.js');
 
 /********************************************************************************************
  * 
@@ -86,6 +87,7 @@ bot.on('conversationUpdate', function (message) {
         return;
     }
     bot.beginDialog(message.address, 'weather');
+    bot.beginDialog(message.address, 'news');
     welcomeMap[message.user.id] = true;
     if(!message.address.conversation.isGroup) {
         return;
@@ -109,9 +111,13 @@ bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
     matches: 'weather'
 });
+bot.dialog('news', intentHandler.getNews).triggerAction({
+    matches: /^news/i
+});
 bot.dialog('syntherise', speechService.stt).triggerAction({
     matches: /^tts/i
 });
+
 bot.customAction({
     matches: /^restart/i,
     onSelectAction: (session, args, next) => {
