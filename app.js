@@ -12,6 +12,7 @@ const builder           = require('./core/');
 const speechService     = require('./service/speech-service.js');
 const util              = require('./utils/util.js');
 const intentHandler     = require('./handler/intent_handler.js');
+const bingSearch        = require('./service/bing-search.js');
 
 /********************************************************************************************
  * 
@@ -70,6 +71,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 intentHandler.getNews(session);
             }else {
                 session.send('다시 한번 말씀해 주시겠습니까? "' + text  + '"를 인식하지 못했습니다.');
+                bingSearch.bing_web_search(session, text);
             }
         })
         .catch(function (error) {
