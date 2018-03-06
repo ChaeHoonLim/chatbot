@@ -63,7 +63,10 @@ var bot = new builder.UniversalBot(connector, function (session) {
             } else if(data.intent == 'schedule') {
                 console.log(data.intent + ", " + data.entity);
                 intentHandler.getSchedule(session, data.entity);
-            } else {
+            } else if(data.intent == 'news') {
+                console.log(data.intent + ", " + data.entity);
+                intentHandler.getNews(session);
+            }else {
                 session.send('다시 한번 말씀해 주시겠습니까? ' + text  + '를 인식하지 못했습니다.');
             }
         })
