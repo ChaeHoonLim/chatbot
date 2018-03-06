@@ -1,4 +1,4 @@
-var sprintf = require('sprintf-js');
+const sprintf = require('sprintf-js');
 
 /** Supports the insertion of recorded audio files. */
 module.exports.audio = function (src, template, params) {

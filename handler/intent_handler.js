@@ -1,9 +1,18 @@
-var builder             = require('../../core/');
-var needle              = require('needle');
-var util                = require('../../utils/util.js');
-var httpClient          = require('http');
-var syncHttpClient      = require('sync-request');
 
+/* library import */
+const needle              = require('needle');
+const httpClient          = require('http');
+const syncHttpClient      = require('sync-request');
+/* user import */
+const builder             = require('../core/');
+const util                = require('../utils/util.js');
+
+/********************************************************************************************
+ * 
+ * Initailize 
+ * 
+********************************************************************************************/
+/* log4j setting */
 const log4js = require('log4js');
 log4js.configure({
     appenders: {
@@ -13,7 +22,11 @@ log4js.configure({
 });
 var logger = log4js.getLogger('worker');
 
-
+/********************************************************************************************
+ * 
+ * Method 
+ * 
+********************************************************************************************/
 exports.routeHandler = function (session, args) {
     var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'poi-name');
     var entity;

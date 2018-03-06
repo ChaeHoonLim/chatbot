@@ -1,14 +1,17 @@
+
+/* setting file */
 require('dotenv').config('./.env');
 
-var restify         = require('restify');
-var builder         = require('./core/');
-const log4js        = require('log4js');
-var needle          = require('needle');
-var speechService   = require('./speech-service.js');
+/* library import */
+const restify           = require('restify');
+const needle            = require('needle');
+const log4js            = require('log4js');
 
 /* user import */
-var util            = require('./utils/util.js');
-var intentHandler   = require('./action/dialog/intent_handler.js');
+const builder           = require('./core/');
+const speechService     = require('./service/speech-service.js');
+const util              = require('./utils/util.js');
+const intentHandler     = require('./handler/intent_handler.js');
 
 /********************************************************************************************
  * 
@@ -60,11 +63,11 @@ var bot = new builder.UniversalBot(connector, function (session) {
                 console.log(data.intent + ", " + data.entity);
                 intentHandler.getSchedule(session, data.entity);
             } else {
-                session.send('다시 한번 말씀해 주시겠습니까? 잘 인식하지 못했습니다.');
+                session.send('다시 한번 말씀해 주시겠습니까? ' + text  + '를 인식하지 못했습니다.');
             }
         })
         .catch(function (error) {
-            session.send('Oops! Something went wrong. Try again later.');
+            session.send('처리과정에서 오류가 발생하였습니다.');
             console.error(error);
         });
 
