@@ -46,7 +46,6 @@ var connector = new builder.ChatConnector({
  */
 var bot = new builder.UniversalBot(connector, function (session) {
     if(util.hasAudioAttachment(session) == false) {
-        logger.debug(session);
         session.send('다시 한번 말씀해 주시겠습니까?');
         return;
     }
@@ -112,15 +111,19 @@ bot.dialog('route', intentHandler.routeHandler).triggerAction({
 bot.dialog('schedule', intentHandler.scheduleHandler).triggerAction({
     matches: 'schedule'
 });
+
+bot.dialog('news', intentHandler.getNews).triggerAction({
+    matches: 'news'
+});
+/*
 bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
     matches: /^hello/i
 });
+*/
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
-    matches: /^weather/i
+    matches: 'weather'
 });
-bot.dialog('news', intentHandler.getNews).triggerAction({
-    matches: /^news/i
-});
+
 bot.dialog('syntherise', speechService.stt).triggerAction({
     matches: /^tts/i
 });
