@@ -53,6 +53,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     var stream = util.getAudioStreamFromMessage(connector, session.message);
     speechService.getTextFromAudioStream(stream)
         .then(function (text) {
+            console.log("attachment text: " + text);
             var data = util.getIntentAndEntity(session, text);
             if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
                 intentHandler.weatherHandler(session);
@@ -112,7 +113,7 @@ bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
     matches: /^hello/i
 });
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
-    matches: 'weather'
+    matches: /^weather/i
 });
 bot.dialog('news', intentHandler.getNews).triggerAction({
     matches: /^news/i

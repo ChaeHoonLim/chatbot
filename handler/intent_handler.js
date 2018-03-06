@@ -337,7 +337,7 @@ exports.scheduleHandler = function (session, args) {
     }    
 }
 exports.weatherHandler = function (session, args) {
-   session.send("오늘의 날씨정보를 전달해 드립니다." );
+    session.send("오늘의 날씨정보를 전달해 드립니다." );
     logger.debug("user-id: " + session.message.user.id);
     var url         = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_WEATHER_URI
     var messageId   = 1000;

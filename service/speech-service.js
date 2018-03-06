@@ -3,8 +3,8 @@ const request                   = require('request');
 const builder                   = require('../core/');
 const SPEECH_API_KEY            = process.env.MICROSOFT_SPEECH_API_KEY;
 const TOKEN_EXPIRY_IN_SECONDS   = 600;
-const speechApiAccessToken      = '';
 
+var speechApiAccessToken        = '';
 exports.getTextFromAudioStream = function (stream) {
     return new Promise(
         function (resolve, reject) {
