@@ -20,7 +20,7 @@ log4js.configure({
     },
     categories: { default: { appenders: ['out'], level: 'debug' } }
 });
-var logger = log4js.getLogger('worker');
+var logger = log4js.getLogger('handler/intent_handler.js');
 
 /********************************************************************************************
  * 
@@ -35,8 +35,7 @@ exports.routeHandler = function (session, args) {
         entity = result.entity.replace(/ /g, "");  /* replace white space. */
     }
     
-    logger.debug("user-id: " + session.message.user.id);
-    logger.info("route: " + entity);
+    logger.info("[USER] " + session.message.user.id + " [ROUTE] " + entity);
 
     var messageId   = 1000;
     var route       = "1";
@@ -80,8 +79,6 @@ exports.routeHandler = function (session, args) {
         }
     });
     var resData = JSON.parse(res.getBody('utf-8'));
-    logger.info("[response]" + resData.data.toString());
-
     
     if(resData == null || resData.data[0] == null) {        
         session.send("검색된 목적지가 없습니다.");
@@ -141,6 +138,7 @@ function printEVStation(data, session) {
             .attachments(arr);    
     session.send(msg);   
     session.send("목적지 근처에 EV충전소가 검색되었습니다.");
+    session.endDialog();
 }
 function printRecommendPoi(data, session) {
     if(data.recommend == null) {
@@ -163,6 +161,7 @@ function printRecommendPoi(data, session) {
         .attachments(arr);    
    session.send(msg);
    session.send("목적지 근처에 추천맛집이 검색되었습니다.");
+   session.endDialog();
 }
 function getReservationInformation(scheduleName) {
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_RESERVATION_URI;
@@ -180,7 +179,6 @@ function getReservationInformation(scheduleName) {
         }
     });
     var resData = JSON.parse(res.getBody('utf-8'));
-    logger.info("[response]" + resData.data.toString());
     
     if(resData == null || resData.data[0] == null) {
         return null;
@@ -213,7 +211,6 @@ function getEtcSchedule(session, destination) {
         }
     });
     var resData = JSON.parse(res.getBody('utf-8'));
-    logger.info("[response]" + resData.data.toString());
     
     if(resData == null || resData.data[0] == null ||  resData.data[0].schedule == null ||  resData.data[0].schedule == '') {
         return null;
@@ -248,9 +245,6 @@ exports.scheduleHandler = function (session, args) {
         qStartDate  = entity + " 00:00";
         qEndDate    = entity + " 23:59";
     }
-    logger.info("entity: " + entity);
-    logger.info("query: " + qStartDate + "~" + qEndDate);
-    logger.debug("user-id: " + session.message.user.id);
 
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
 
@@ -270,9 +264,6 @@ exports.scheduleHandler = function (session, args) {
     });
     var resData = JSON.parse(res.getBody('utf-8'));
 
-
-    logger.info("[response]" + resData.data.toString());
-
     data = resData.data[0];
     if(data == null) {
         var msg = new builder.Message(session)
@@ -291,39 +282,7 @@ exports.scheduleHandler = function (session, args) {
         return;
     }
     var msg;
-
-    if(data.location != '-' && data.location != 0) {
-
-        var command;
-        if(data.location == '1') {
-            command = "집으로 가자";
-        } else if(data.location == '2') {
-            command = "인천공항으로 가자";
-        } else if(data.location == '3') {
-            command = "양재터미널로 가자";
-        } else if(data.location == '4') {
-            command = "용산역으로 가자";
-        } else if(data.location == '5') {
-            command = "현대엠엔소프트로 가자";
-        }
-
-        msg = new builder.Message(session)
-        .textFormat(builder.TextFormat.xml)
-        .attachments([
-            new builder.HeroCard(session)
-                .title(data.title)
-                .subtitle(data.start_time + " ~ " + data.end_time)
-                .text("등록된 장소로 길안내를 해드릴 수 있습니다.")
-                .images([
-                    builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
-                ])
-                .buttons([
-                    builder.CardAction.imBack(session, command, "길안내"),
-                ])
-                .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
-        ]);
-        builder.Prompts.choice(session, msg, "1|2|3|4|5");
-    } else {
+    if(data.location == '-' || data.location == 0 || data.location == '') {
         msg = new builder.Message(session)
         .textFormat(builder.TextFormat.xml)
         .attachments([
@@ -334,11 +293,42 @@ exports.scheduleHandler = function (session, args) {
                 .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
         ]);
         session.send(msg);
-    }    
+        session.endDialog();
+        return;
+    }
+    var command;
+    if(data.location == '1') {
+        command = "집으로 가자";
+    } else if(data.location == '2') {
+        command = "인천공항으로 가자";
+    } else if(data.location == '3') {
+        command = "양재터미널로 가자";
+    } else if(data.location == '4') {
+        command = "용산역으로 가자";
+    } else if(data.location == '5') {
+        command = "현대엠엔소프트로 가자";
+    }
+
+    msg = new builder.Message(session)
+    .textFormat(builder.TextFormat.xml)
+    .attachments([
+        new builder.HeroCard(session)
+            .title(data.title)
+            .subtitle(data.start_time + " ~ " + data.end_time)
+            .text("등록된 장소로 길안내를 해드릴 수 있습니다.")
+            .images([
+                builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
+            ])
+            .buttons([
+                builder.CardAction.imBack(session, command, "길안내"),
+            ])
+            .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
+    ]);    
+    session.send(msg);
+    session.endDialog();
 }
 exports.weatherHandler = function (session, args) {
     session.send("오늘의 날씨정보를 전달해 드립니다." );
-    logger.debug("user-id: " + session.message.user.id);
     var url         = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_WEATHER_URI
     var messageId   = 1000;
     var res = syncHttpClient('POST', url, {
@@ -354,9 +344,6 @@ exports.weatherHandler = function (session, args) {
         }
     });
     var resData = JSON.parse(res.getBody('utf-8'));
-
-
-    logger.info("[response]" + resData.data);
     var result = resData.data;
     if(result == null) {
         session.send("data is null.");
@@ -394,31 +381,17 @@ exports.weatherHandler = function (session, args) {
                         builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
                     ])
             ]);    
-    session.send(msg);
-
-    /* Do not work 
-    msg = new builder.Message(session)
-        .speak('This is the text that will be spoken.')
-        .inputHint(builder.InputHint.acceptingInput);
-
-    session.say('Please hold while I calculate a response.',
-        'Please hold while I calculate a response.',
-        { inputHint: builder.InputHint.ignoringInput });
-    */   
+    session.send(msg);   
+    session.endDialog();
 }
 
 
 
 
-exports.routeGuidance = function (session, entity) {
-    
+exports.routeGuidance = function (session, entity) {    
     if(entity != null) {
         entity = entity.replace(/ /g, "");  /* replace white space. */
     }
-
-    logger.debug("user-id: " + session.message.user.id);
-    logger.info("route: " + entity);
-
     var messageId   = 1000;
     var route       = "1";
     var etcObj      = null;
@@ -460,10 +433,7 @@ exports.routeGuidance = function (session, entity) {
             'Accept': '*'
         }
     });
-    var resData = JSON.parse(res.getBody('utf-8'));
-    logger.info("[response]" + resData.data.toString());
-
-    
+    var resData = JSON.parse(res.getBody('utf-8'));    
     if(resData == null || resData.data[0] == null) {        
         session.send("검색된 목적지가 없습니다.");
         session.endDialog();
@@ -493,7 +463,6 @@ exports.routeGuidance = function (session, entity) {
 
     /* Reservation */
     if(etcObj == null || etcObj.schedule == null) {
-        console.log("etc schedule is null.");
         session.endDialog();
         return;
     }
@@ -525,9 +494,6 @@ exports.getSchedule = function (session, entity) {
         qStartDate  = entity + " 00:00";
         qEndDate    = entity + " 23:59";
     }
-    logger.info("entity: " + entity);
-    logger.info("query: " + qStartDate + "~" + qEndDate);
-    logger.debug("user-id: " + session.message.user.id);
 
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
 
@@ -546,9 +512,6 @@ exports.getSchedule = function (session, entity) {
         }
     });
     var resData = JSON.parse(res.getBody('utf-8'));
-
-
-    logger.info("[response]" + resData.data.toString());
 
     data = resData.data[0];
     if(data == null) {
@@ -569,38 +532,7 @@ exports.getSchedule = function (session, entity) {
     }
     var msg;
 
-    if(data.location != '-' && data.location != 0) {
-
-        var command;
-        if(data.location == '1') {
-            command = "집으로 가자";
-        } else if(data.location == '2') {
-            command = "인천공항으로 가자";
-        } else if(data.location == '3') {
-            command = "양재터미널로 가자";
-        } else if(data.location == '4') {
-            command = "용산역으로 가자";
-        } else if(data.location == '5') {
-            command = "현대엠엔소프트로 가자";
-        }
-
-        msg = new builder.Message(session)
-        .textFormat(builder.TextFormat.xml)
-        .attachments([
-            new builder.HeroCard(session)
-                .title(data.title)
-                .subtitle(data.start_time + " ~ " + data.end_time)
-                .text("등록된 장소로 길안내를 해드릴 수 있습니다.")
-                .images([
-                    builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
-                ])
-                .buttons([
-                    builder.CardAction.imBack(session, command, "길안내"),
-                ])
-                .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
-        ]);
-        builder.Prompts.choice(session, msg, "1|2|3|4|5");
-    } else {
+    if(data.location == '-' || data.location == 0 || data.location == '') {
         msg = new builder.Message(session)
         .textFormat(builder.TextFormat.xml)
         .attachments([
@@ -611,7 +543,39 @@ exports.getSchedule = function (session, entity) {
                 .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
         ]);
         session.send(msg);
-    }    
+        session.endDialog();
+        return;
+    }
+    var command;
+    if(data.location == '1') {
+        command = "집으로 가자";
+    } else if(data.location == '2') {
+        command = "인천공항으로 가자";
+    } else if(data.location == '3') {
+        command = "양재터미널로 가자";
+    } else if(data.location == '4') {
+        command = "용산역으로 가자";
+    } else if(data.location == '5') {
+        command = "현대엠엔소프트로 가자";
+    }
+
+    msg = new builder.Message(session)
+    .textFormat(builder.TextFormat.xml)
+    .attachments([
+        new builder.HeroCard(session)
+            .title(data.title)
+            .subtitle(data.start_time + " ~ " + data.end_time)
+            .text("등록된 장소로 길안내를 해드릴 수 있습니다.")
+            .images([
+                builder.CardImage.create(session, "https://hmnsbotstorage01.blob.core.windows.net/poc-images/" + data.location + ".jpg")
+            ])
+            .buttons([
+                builder.CardAction.imBack(session, command, "길안내"),
+            ])
+            .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
+    ]);
+    session.send(msg);
+    session.endDialog();
 }
 
 
@@ -647,4 +611,5 @@ exports.getNews = function (session) {
     .attachmentLayout(builder.AttachmentLayout.carousel)
     .attachments(arr); 
     session.send(msg);
+    session.endDialog();
 }

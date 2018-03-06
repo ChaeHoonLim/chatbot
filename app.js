@@ -19,7 +19,7 @@ const intentHandler     = require('./handler/intent_handler.js');
  * 
 ********************************************************************************************/
 /* log4j setting */
-var logger = log4js.getLogger('worker');
+var logger = log4js.getLogger('[app.js]');
 log4js.configure({
     appenders: {
         out: { type: 'console' }
@@ -28,7 +28,7 @@ log4js.configure({
 });
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
-    console.log('%s listening to %s', server.name, server.url);
+    logger.info('%s listening to %s', server.name, server.url);
 });
 /********************************************************************************************
  * 
@@ -50,28 +50,31 @@ var bot = new builder.UniversalBot(connector, function (session) {
         return;
     }
     var stream = util.getAudioStreamFromMessage(connector, session.message);
+    var responseMessage = "";
     speechService.getTextFromAudioStream(stream)
         .then(function (text) {
-            console.log("attachment text: " + text);
+            logger.info("[STT] " + text);
+            responseMessage = "'" + text + "' 음성메시지에 대한 처리결과를 전달해 드립니다.";
             var data = util.getIntentAndEntity(session, text);
             if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
+                session.send(responseMessage);
                 intentHandler.weatherHandler(session);
             } else if(data.intent == 'route') {
-                console.log(data.intent + ", " + data.entity);
+                session.send(responseMessage);
                 intentHandler.routeGuidance(session, data.entity);
             } else if(data.intent == 'schedule') {
-                console.log(data.intent + ", " + data.entity);
+                session.send(responseMessage);
                 intentHandler.getSchedule(session, data.entity);
             } else if(data.intent == 'news') {
-                console.log(data.intent + ", " + data.entity);
+                session.send(responseMessage);
                 intentHandler.getNews(session);
             }else {
-                session.send('다시 한번 말씀해 주시겠습니까? ' + text  + '를 인식하지 못했습니다.');
+                session.send('다시 한번 말씀해 주시겠습니까? "' + text  + '"를 인식하지 못했습니다.');
             }
         })
         .catch(function (error) {
-            session.send('처리과정에서 오류가 발생하였습니다.');
-            console.error(error);
+            session.send('"Speech To Text" 처리과정에서 오류가 발생하였습니다.');
+            logger.error(error);
         });
 
 }); 
@@ -87,8 +90,6 @@ server.post('/api/messages', connector.listen());
  ********************************************************************************************/
 var welcomeMap = new Object();
 bot.on('conversationUpdate', function (message) {
-    // Check for group conversations    
-    logger.debug(message);
     if(welcomeMap[message.user.id] != null) {
         return;
     }

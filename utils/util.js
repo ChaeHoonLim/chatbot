@@ -13,7 +13,7 @@ log4js.configure({
     },
     categories: { default: { appenders: ['out'], level: 'debug' } }
 });
-var logger          = log4js.getLogger('worker');
+var logger          = log4js.getLogger('[utils/util.js]');
 
 function getDate(days) {
     var result      = new Date();    
@@ -63,7 +63,6 @@ exports.getTime = function (minutes) {
 }
 
 exports.hasAudioAttachment = function (session) {
-    logger.debug("[attachment-size]" + session.message.attachments.length);
     return session.message.attachments.length > 0 &&
         (session.message.attachments[0].contentType === 'audio/wav' ||
             session.message.attachments[0].contentType === 'application/octet-stream');
@@ -77,9 +76,6 @@ exports.getAudioStreamFromMessage = function (connector, message) {
     var headers = {};
     var attachment = message.attachments[0];
     if (checkRequiresToken(message)) {
-        // The Skype attachment URLs are secured by JwtToken,
-        // you should set the JwtToken of your bot as the authorization header for the GET request your bot initiates to fetch the image.
-        // https://github.com/Microsoft/BotBuilder/issues/662
         connector.getAccessToken(function (error, token) {
             var tok = token;
             headers['Authorization'] = 'Bearer ' + token;
@@ -88,8 +84,6 @@ exports.getAudioStreamFromMessage = function (connector, message) {
             return needle.get(attachment.contentUrl, { headers: headers });
         });
     }
-    console.log("URL: " + attachment.contentUrl);
-
     headers['Content-Type'] = attachment.contentType;
     return needle.get(attachment.contentUrl, { headers: headers });
 }
@@ -116,8 +110,8 @@ exports.processText = function (text) {
 
 
 
-exports.getIntentAndEntity = function (session, attrance) {
-    if(attrance == null || attrance == "") {
+exports.getIntentAndEntity = function (session, atterance) {
+    if(atterance == null || atterance == "") {
         return;
     }
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_LUIS_URI
@@ -128,7 +122,7 @@ exports.getIntentAndEntity = function (session, attrance) {
         json: { 
             'data': {
                 'user': session.message.user.id
-                , 'query': attrance
+                , 'query': atterance
                 
             }, 'message-id': messageId
         },
@@ -137,11 +131,10 @@ exports.getIntentAndEntity = function (session, attrance) {
             'Accept': '*'
         }
     });
-    var resData = JSON.parse(res.getBody('utf-8'));
-    logger.info("[response]" + resData.data.toString());
-    
+    var resData = JSON.parse(res.getBody('utf-8'));    
     if(resData == null || resData.data == null) {
         return null;
     }
+    logger.info("[ATTERANCE] " + atterance + "[INTENT] " + resData.data.intent + " [ENTITY] " + resData.data.entity);
     return resData.data;      
 }
