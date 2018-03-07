@@ -115,7 +115,9 @@ exports.routeHandler = function (session, args) {
     }
     etcObj = getReservationInformation(etcObj.schedule);
     
-    session.send(etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다.");
+    if(etcObj != null && etcObj.company != null && etcObj.schedule != null && etcObj.duration != null) {
+        session.send(etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다.");
+    }
     session.endDialog();
 }
 function printEVStation(data, session) {
@@ -347,6 +349,7 @@ exports.weatherHandler = function (session, args) {
     var result = resData.data;
     if(result == null) {
         session.send("data is null.");
+        session.endDialog();
         return;
     }
     var msg = new builder.Message(session)
@@ -594,7 +597,8 @@ exports.getNews = function (session) {
 
     var arr = [];
     var data = resData.articles;
-    if(data == null) {        
+    if(data == null) {      
+        session.endDialog();  
         return;
     }    
     for(var i = 0; i<data.length; i++) {
