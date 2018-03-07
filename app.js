@@ -90,7 +90,7 @@ server.post('/api/messages', connector.listen());
  * Activity Events (Welcome Message)
  * 
  ********************************************************************************************/
-var welcomeMap = new Object();
+const welcomeMap = [];
 bot.on('conversationUpdate', function (message) {
     if(welcomeMap[message.user.id] != null) {
         return;
@@ -101,6 +101,13 @@ bot.on('conversationUpdate', function (message) {
     if(!message.address.conversation.isGroup) {
         return;
     }
+});
+ bot.on('contactRelationUpdate', function (message) {
+    if (message.action != 'add') {
+        return;
+    }
+    bot.beginDialog(message.address, 'weather');
+    bot.beginDialog(message.address, 'news');
 });
 /********************************************************************************************
  *
@@ -114,19 +121,15 @@ bot.dialog('route', intentHandler.routeHandler).triggerAction({
 bot.dialog('schedule', intentHandler.scheduleHandler).triggerAction({
     matches: 'schedule'
 });
-
 bot.dialog('news', intentHandler.getNews).triggerAction({
     matches: 'news'
 });
-/*
 bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
     matches: /^hello/i
 });
-*/
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
     matches: 'weather'
 });
-
 bot.dialog('syntherise', speechService.stt).triggerAction({
     matches: /^tts/i
 });
