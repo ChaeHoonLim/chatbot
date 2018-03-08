@@ -27,7 +27,7 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
     var file            = root + "\\resource\\" + fileName;
     
     if(fs.existsSync(file) == false) {
-        logger.error(file + " is not exist");
+        logger.error(file + " is not exist.");
     }
 
     var blobSvc         = azure.createBlobService();    
@@ -38,7 +38,6 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
             logger.error(process.env.AZURE_CONTAINER_NAME);
             return;
         }
-        logger.info("[STORAGE] " + process.env.AZURE_CONTAINER_NAME + " container created.")
     });
     /* upload blob file */
     blobSvc.createAppendBlobFromLocalFile(process.env.AZURE_CONTAINER_NAME, fileName, file, function(error, result, response){
@@ -46,9 +45,12 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
             logger.error(error);
             return;
         }
+        /* remove temporary file */
+        /*
         if(fs.existsSync(file) == true) {
-            fs.unlinkSync(file); /* remove temporary file */
+            fs.unlinkSync(file); 
         }
+        */
         var provide = URL + "/" + fileName;
         
         /* add attachments */
