@@ -47,6 +47,7 @@ var connector = new builder.ChatConnector({
  */
 var bot = new builder.UniversalBot(connector, function (session) {
     if(util.hasAudioAttachment(session) == false) {
+        logger.info("[NEED-CHECK] " + session.message);
         session.send('다시 한번 말씀해 주시겠습니까?');
         return;
     }
