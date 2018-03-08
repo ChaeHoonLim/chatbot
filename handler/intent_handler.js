@@ -112,8 +112,8 @@ exports.routeHandler = function (session, args) {
 
     /* Recommend */
     var recommend = printRecommendPoi(data, session);
-    if(ev == true) {
-        recommend += "목적지 부근에 맛집이 있습니다. 화면을 참고해 주세요. ";
+    if(recommend == true) {
+        message += "목적지 부근에 맛집이 있습니다. 화면을 참고해 주세요. ";
     }
 
     /* Reservation */
@@ -491,10 +491,16 @@ exports.routeGuidance = function (session, entity) {
     
 
     /* EV */
-    printEVStation(data, session);
+    var ev = printEVStation(data, session);
+    if(ev == true) {
+        message += "목적지 부근에 전기충전소가 있습니다. 화면을 참고해 주세요. ";
+    }
 
-    /* EV */
-    printRecommendPoi(data, session);
+    /* Recommend */
+    var recommend = printRecommendPoi(data, session);
+    if(recommend == true) {
+        message += "목적지 부근에 맛집이 있습니다. 화면을 참고해 주세요. ";
+    }
 
     /* Reservation */
     if(etcObj == null || etcObj.schedule == null) {
