@@ -1,0 +1,42 @@
+{
+  "name": "chatbot",
+  "version": "1.0.0",
+  "description": "\"# chatbot\"",
+  "main": "app.js",
+  "dependencies": {
+    "app-root-path": "^2.0.1",
+    "azure-storage": "^2.8.1",
+    "bingspeech-api-client": "^2.4.1",
+    "bluebird": "^3.5.1",
+    "botbuilder": "^3.14.0",
+    "dotenv": "^5.0.0",
+    "log4js": "^2.5.3",
+    "moment": "^2.20.1",
+    "needle": "^1.6.0",
+    "node-env-file": "^0.1.8",
+    "node-uuid": "^1.4.8",
+    "node-gyp": "^3.6.2",
+    "python": "^0.0.4",
+    "request": "^2.83.0",
+    "require-load": "^2.2.0",
+    "restify": "^4.3.2",
+    "sprintf-js": "^1.1.1",
+    "sync-request": "^5.0.0",
+    "wav": "^1.0.1",
+    "xmlbuilder": "^9.0.7"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ChaeHoonLim/chatbot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ChaeHoonLim/chatbot/issues"
+  },
+  "homepage": "https://github.com/ChaeHoonLim/chatbot#readme"
+}

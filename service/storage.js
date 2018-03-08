@@ -26,9 +26,11 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
 
     var file            = root + "\\resource\\" + fileName;
     
-    if(fs.existsSync(file) == false) {
+    while(fs.existsSync(file) == false) {
+        sleep(10);
         logger.error(file + " is not exist.");
     }
+    logger.error(file + " exist.");
 
     var blobSvc         = azure.createBlobService();    
     /* create container if not exist. */
@@ -83,4 +85,8 @@ function createVideoCard(session, ttsURL) {
         .buttons([
             builder.CardAction.openUrl(session, 'https://peach.blender.org/', 'Learn More')
         ]);
+}
+
+function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
 }
