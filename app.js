@@ -29,7 +29,11 @@ log4js.configure({
 });
 var server = restify.createServer();
 server.listen(process.env.port || process.env.PORT || 3978, function () {
-    logger.info('%s listening to %s', server.name, server.url);
+    logger.info('----------------------------------------');    
+    logger.info('HMNS Bot Server %s', process.env.HMNS_BOT_VERSION);    
+    logger.info('Listening: %s', server.url);
+    logger.info('----------------------------------------');    
+    
 });
 /********************************************************************************************
  * 
