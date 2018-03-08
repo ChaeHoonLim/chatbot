@@ -24,7 +24,12 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
         attachments = [];
     }
 
-    var file            = root + "\\" + fileName;
+    var file            = root + "\\resource\\" + fileName;
+    
+    if(fs.existsSync(file) == false) {
+        logger.error(file + " is not exist");
+    }
+
     var blobSvc         = azure.createBlobService();    
     /* create container if not exist. */
     blobSvc.createContainerIfNotExists(process.env.AZURE_CONTAINER_NAME,  {publicAccessLevel : 'blob'}, function(error, result, response){

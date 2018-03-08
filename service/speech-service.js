@@ -114,8 +114,14 @@ function sendTTS(session, message, attachments) {
     }
     let bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);   
     bing.synthesize(message).then(result => {
+        var dir = root + "\\resource";
+
+        if (fs.existsSync(dir) == false){
+            fs.mkdirSync(dir);
+        }
+
         var fileName    = uuid.v4() + ".wav";
-        var file        = root + "\\" + fileName;
+        var file        = root + "\\resource\\" + fileName;
         var wstream     = fs.createWriteStream(file);
         wstream.write(result.wave);
         wstream.close();
