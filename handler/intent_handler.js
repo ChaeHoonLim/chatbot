@@ -6,7 +6,7 @@ const syncHttpClient      = require('sync-request');
 /* user import */
 const builder             = require('../core/');
 const util                = require('../utils/util.js');
-
+const speechService       = require('../service/speech-service.js');
 /********************************************************************************************
  * 
  * Initailize 
@@ -30,6 +30,7 @@ var logger = log4js.getLogger('handler/intent_handler.js');
 exports.routeHandler = function (session, args) {
     var result = builder.EntityRecognizer.findEntity(args.intent.entities, 'poi-name');
     var entity;
+    var message = "";
 
     if(result != null) {
         entity = result.entity.replace(/ /g, "");  /* replace white space. */
@@ -41,7 +42,7 @@ exports.routeHandler = function (session, args) {
     var route       = "1";
     var etcObj      = null;
     if (!result || entity == null) {
-        session.send("검색된 목적지가 없습니다.");
+        speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null); 
         session.endDialog();
         return;
     } else if(entity.toString() == '집') {               /* poi search */
@@ -58,7 +59,7 @@ exports.routeHandler = function (session, args) {
     } else if(entity.toString() == '현대엠엔소프트' || entity.toString() == '회사') { 
         route = "5";
     } else {        
-        session.send("검색된 목적지가 없습니다.");
+        speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null); 
         session.endDialog();
         return;
     }
@@ -81,48 +82,57 @@ exports.routeHandler = function (session, args) {
     var resData = JSON.parse(res.getBody('utf-8'));
     
     if(resData == null || resData.data[0] == null) {        
-        session.send("검색된 목적지가 없습니다.");
+        speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null); 
         session.endDialog();
         return;
     }
     data = resData.data[0];
 
+    message += "'" + entity.toString() + "'까지 " + util.getTime(data.duration) + "에 도착 예정입니다. ";
     var msg = new builder.Message(session)
         .textFormat(builder.TextFormat.xml)
         .attachments([
             new builder.HeroCard(session)
             .title("목적지: " + entity.toString())
-            .text("'" + entity.toString() + "'까지 " + util.getTime(data.duration) + "에 도착 예정입니다.")
+            .text(message)
             .images([
                 builder.CardImage.create(session, data.url)
                     
             ]).tap(builder.CardAction.showImage(session, data.url))
         ]);
     session.send(msg);
-    session.send("목적지까지 " + data.duration + "분 소요될 예정이며, 요금은 " + data.fee + "원 입니다.");
+
+    message += "목적지까지 " + data.duration + "분 소요될 예정이며, 요금은 " + data.fee + "원 입니다. ";
 
     /* EV */
-    printEVStation(data, session);
+    var ev = printEVStation(data, session);
+    if(ev == true) {
+        message += "목적지 부근에 전기충전소가 있습니다. 화면을 참고해 주세요. ";
+    }
 
-    /* EV */
-    printRecommendPoi(data, session);
+    /* Recommend */
+    var recommend = printRecommendPoi(data, session);
+    if(ev == true) {
+        recommend += "목적지 부근에 맛집이 있습니다. 화면을 참고해 주세요. ";
+    }
 
     /* Reservation */
     if(etcObj == null || etcObj.schedule == null) {
         console.log("etc schedule is null.");
+        speechService.sendSpeechMessage(session, message, null); 
         session.endDialog();
         return;
     }
-    etcObj = getReservationInformation(etcObj.schedule);
-    
+    etcObj = getReservationInformation(etcObj.schedule);    
     if(etcObj != null && etcObj.company != null && etcObj.schedule != null && etcObj.duration != null) {
-        session.send(etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다.");
+        message += etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다. ";
     }
+    speechService.sendSpeechMessage(session, message, null); 
     session.endDialog();
 }
 function printEVStation(data, session) {
     if(data.ev == null) {
-         return;
+         return false;
     }
     var arr = [];
     var msg;
@@ -139,12 +149,12 @@ function printEVStation(data, session) {
             .attachmentLayout(builder.AttachmentLayout.carousel)
             .attachments(arr);    
     session.send(msg);   
-    session.send("목적지 근처에 EV충전소가 검색되었습니다.");
     session.endDialog();
+    return true;
 }
 function printRecommendPoi(data, session) {
     if(data.recommend == null) {
-        return;
+        return false;
    }
    var arr = [];
    var msg;
@@ -162,8 +172,8 @@ function printRecommendPoi(data, session) {
         .attachmentLayout(builder.AttachmentLayout.carousel)
         .attachments(arr);    
    session.send(msg);
-   session.send("목적지 근처에 추천맛집이 검색되었습니다.");
    session.endDialog();
+   return true;
 }
 function getReservationInformation(scheduleName) {
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_RESERVATION_URI;
@@ -283,6 +293,7 @@ exports.scheduleHandler = function (session, args) {
         session.endDialog();
         return;
     }
+    var message = data.title + " 일정이 있습니다. ";    
     var msg;
     if(data.location == '-' || data.location == 0 || data.location == '') {
         msg = new builder.Message(session)
@@ -295,21 +306,29 @@ exports.scheduleHandler = function (session, args) {
                 .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
         ]);
         session.send(msg);
+        speechService.sendSpeechMessage(session, message, null); 
         session.endDialog();
         return;
     }
+    message += "등록된 일정의 위치가 ";
     var command;
-    if(data.location == '1') {
+    if(data.location == '1') {        
         command = "집으로 가자";
+        message += "'집'으로 ";
     } else if(data.location == '2') {
         command = "인천공항으로 가자";
+        message += "'인천공항' ";
     } else if(data.location == '3') {
         command = "양재터미널로 가자";
+        message += "'양재터미널' ";
     } else if(data.location == '4') {
         command = "용산역으로 가자";
+        message += "'용산역' ";
     } else if(data.location == '5') {
         command = "현대엠엔소프트로 가자";
+        message += "'현대엠엔소프트' ";
     }
+    message += "등록되어 있습니다. '길안내'를 클릭아시면 안내해 드릴 수 있습니다. ";
 
     msg = new builder.Message(session)
     .textFormat(builder.TextFormat.xml)
@@ -327,10 +346,10 @@ exports.scheduleHandler = function (session, args) {
             .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
     ]);    
     session.send(msg);
+    speechService.sendSpeechMessage(session, message, null); 
     session.endDialog();
 }
-exports.weatherHandler = function (session, args) {
-    session.send("오늘의 날씨정보를 전달해 드립니다." );
+exports.weatherHandler = function (session, args) {    
     var url         = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_WEATHER_URI
     var messageId   = 1000;
     var res = syncHttpClient('POST', url, {
@@ -352,38 +371,46 @@ exports.weatherHandler = function (session, args) {
         session.endDialog();
         return;
     }
+    var attachments = [];
+    
+    var todayMessage = "오늘의 날씨정보를 전달해 드립니다. ";
+    todayMessage+= "최대온도 " + result[0].max + "로 " + result[0].maxcomment + " (입)니다. " + " 최저온도는 " + result[0].min + "입니다. ";
+
+    attachments.push(new builder.HeroCard(session)
+        .title(result[0].date)
+        .text("최대온도 " + result[0].max + "로 " + result[0].maxcomment + " (입)니다. " + " 최저온도는 " + result[0].min + "입니다. ")
+        .images([
+            builder.CardImage.create(session, result[0].image),
+        ])
+        .buttons([
+            builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
+        ]));
+    
+    attachments.push(new builder.HeroCard(session)
+        .title(result[1].date)
+        .text("최대온도 " + result[1].max + "로 " + result[1].maxcomment + " (입)니다. " + " 최저온도는 " + result[1].min + "입니다. ")
+        .images([
+            builder.CardImage.create(session, result[1].image),
+        ])
+        .buttons([
+            builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
+        ]));
+    attachments.push(new builder.HeroCard(session)
+        .title(result[2].date)
+        .text("최대온도 " + result[2].max + "로 " + result[2].maxcomment + " (입)니다. " + " 최저온도는 " + result[2].min + "입니다. ")
+        .images([
+            builder.CardImage.create(session, result[2].image),
+        ])
+        .buttons([
+            builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
+        ]));
+    speechService.sendSpeechMessage(session, todayMessage, null);
+
     var msg = new builder.Message(session)
             .textFormat(builder.TextFormat.xml)
             .attachmentLayout(builder.AttachmentLayout.carousel)
-            .attachments([
-                new builder.HeroCard(session)
-                    .title(result[0].date)
-                    .text("최대온도 " + result[0].max + "(으)로 " + result[0].maxcomment + " (입)니다. " + " 최저온도는 " + result[0].min + "(으)로 " + result[0].mincomment + "이겠습니다.")
-                    .images([
-                        builder.CardImage.create(session, result[0].image),
-                    ])
-                    .buttons([
-                        builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
-                    ]),
-                new builder.HeroCard(session)
-                    .title(result[1].date)
-                    .text("최대온도 " + result[1].max + "(으)로 " + result[1].maxcomment + " (입)니다. " + " 최저온도는 " + result[1].min + "(으)로 " + result[1].mincomment + "이겠습니다.")
-                    .images([
-                        builder.CardImage.create(session, result[1].image),
-                    ])
-                    .buttons([
-                        builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
-                    ]),
-                new builder.HeroCard(session)
-                    .title(result[2].date)
-                    .text("최대온도 " + result[2].max + "(으)로 " + result[2].maxcomment + " (입)니다. " + " 최저온도는 " + result[2].min + "(으)로 " + result[2].mincomment + "이겠습니다.")
-                    .images([
-                        builder.CardImage.create(session, result[2].image),
-                    ])
-                    .buttons([
-                        builder.CardAction.openUrl(session, "http://www.weatheri.co.kr/", "날씨정보")
-                    ])
-            ]);    
+            .attachments(attachments);    
+
     session.send(msg);   
     session.endDialog();
 }
@@ -399,7 +426,7 @@ exports.routeGuidance = function (session, entity) {
     var route       = "1";
     var etcObj      = null;
     if (entity == null) {
-        session.send("검색된 목적지가 없습니다.");
+        speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null);        
         session.endDialog();
         return;
     } else if(entity.toString() == '집') {               /* poi search */
@@ -416,7 +443,7 @@ exports.routeGuidance = function (session, entity) {
     } else if(entity.toString() == '현대엠엔소프트' || entity.toString() == '회사') { 
         route = "5";
     } else {        
-        session.send("검색된 목적지가 없습니다.");
+        speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null);  
         session.endDialog();
         return;
     }
@@ -438,25 +465,30 @@ exports.routeGuidance = function (session, entity) {
     });
     var resData = JSON.parse(res.getBody('utf-8'));    
     if(resData == null || resData.data[0] == null) {        
-        session.send("검색된 목적지가 없습니다.");
+        speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null);  
         session.endDialog();
         return;
     }
     data = resData.data[0];
+
+    var message = "'" + entity.toString() + "'까지 " + util.getTime(data.duration) + "에 도착 예정입니다. ";
+    
 
     var msg = new builder.Message(session)
         .textFormat(builder.TextFormat.xml)
         .attachments([
             new builder.HeroCard(session)
             .title("목적지: " + entity.toString())
-            .text("'" + entity.toString() + "'까지 " + util.getTime(data.duration) + "에 도착 예정입니다.")
+            .text(message)
             .images([
                 builder.CardImage.create(session, data.url)
                     
             ]).tap(builder.CardAction.showImage(session, data.url))
         ]);
     session.send(msg);
-    session.send("목적지까지 " + data.duration + "분 소요될 예정이며, 요금은 " + data.fee + "원 입니다.");
+
+    message += "목적지까지 " + data.duration + "분 소요될 예정이며, 요금은 " + data.fee + "원 입니다. ";
+    
 
     /* EV */
     printEVStation(data, session);
@@ -466,12 +498,14 @@ exports.routeGuidance = function (session, entity) {
 
     /* Reservation */
     if(etcObj == null || etcObj.schedule == null) {
+        speechService.sendSpeechMessage(session, message, null); 
         session.endDialog();
         return;
     }
     etcObj = getReservationInformation(etcObj.schedule);
     
-    session.send(etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다.");
+    message += etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다. ";
+    speechService.sendSpeechMessage(session, message, null); 
     session.endDialog();
 }
 
@@ -534,7 +568,7 @@ exports.getSchedule = function (session, entity) {
         return;
     }
     var msg;
-
+    var message = data.title + " 일정이 있습니다. ";  
     if(data.location == '-' || data.location == 0 || data.location == '') {
         msg = new builder.Message(session)
         .textFormat(builder.TextFormat.xml)
@@ -546,21 +580,29 @@ exports.getSchedule = function (session, entity) {
                 .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
         ]);
         session.send(msg);
+        speechService.sendSpeechMessage(session, message, null); 
         session.endDialog();
         return;
     }
+    message += "등록된 일정의 위치가 ";
     var command;
-    if(data.location == '1') {
+    if(data.location == '1') {        
         command = "집으로 가자";
+        message += "'집'으로 ";
     } else if(data.location == '2') {
         command = "인천공항으로 가자";
+        message += "'인천공항' ";
     } else if(data.location == '3') {
         command = "양재터미널로 가자";
+        message += "'양재터미널' ";
     } else if(data.location == '4') {
         command = "용산역으로 가자";
+        message += "'용산역' ";
     } else if(data.location == '5') {
         command = "현대엠엔소프트로 가자";
+        message += "'현대엠엔소프트' ";
     }
+    message += "등록되어 있습니다. '길안내'를 클릭아시면 안내해 드릴 수 있습니다. ";
 
     msg = new builder.Message(session)
     .textFormat(builder.TextFormat.xml)
@@ -578,13 +620,14 @@ exports.getSchedule = function (session, entity) {
             .tap(builder.CardAction.openUrl(session, process.env.THIRD_PARTY_SERVER_CALENDAR_WEB_URL + "/" + session.message.user.id))
     ]);
     session.send(msg);
+    speechService.sendSpeechMessage(session, message, null); 
     session.endDialog();
 }
 
 
 exports.getNews = function (session) {
     
-    session.send("오늘의 News를 전달해 드립니다." );
+    var message = "오늘의 News를 전달해 드립니다. "; 
     var url = "https://newsapi.org/v2/top-headlines?sources=cnn&apiKey=c6b04ec39449435cac90089e0d0dfca6";
 
     var res = syncHttpClient('GET', url, {
@@ -601,7 +644,8 @@ exports.getNews = function (session) {
         session.endDialog();  
         return;
     }    
-    for(var i = 0; i<data.length; i++) {
+    for(var i = 0; i<(data.length > 3 ? 3: data.length); i++) {
+        message += data[i].title + " ";
         var temp = new builder.HeroCard(session)
             .title(data[i].title)
             .subtitle(data[i].source.name)
@@ -610,6 +654,8 @@ exports.getNews = function (session) {
             .buttons([builder.CardAction.openUrl(session, data[i].url, "기사보기")]);
         arr.push(temp);  
     }
+    message += "기사가 검색 되었습니다. "
+    speechService.sendSpeechMessage(session, message, null); 
     msg = new builder.Message(session)
     .textFormat(builder.TextFormat.xml)
     .attachmentLayout(builder.AttachmentLayout.carousel)

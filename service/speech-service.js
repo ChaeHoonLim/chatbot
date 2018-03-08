@@ -1,6 +1,24 @@
-const uuid                      = require('node-uuid');
-const request                   = require('request');
-const builder                   = require('../core/');
+const uuid      = require('node-uuid');
+const request   = require('request');
+const builder   = require('../core/');
+const storage   = require('./storage.js');
+const root      = require('app-root-path');
+/********************************************************************************************
+ * 
+ * Initailize 
+ * 
+********************************************************************************************/
+/* log4j setting */
+const log4js = require('log4js');
+log4js.configure({
+    appenders: {
+        out: { type: 'console' }
+    },
+    categories: { default: { appenders: ['out'], level: 'debug' } }
+});
+var logger = log4js.getLogger('service/storage.js');
+
+
 const SPEECH_API_KEY            = process.env.MICROSOFT_SPEECH_API_KEY;
 const TOKEN_EXPIRY_IN_SECONDS   = 600;
 
@@ -81,48 +99,26 @@ function streamToText(stream, resolve, reject) {
     }));
 }
 
-
-
 var     client  = require('bingspeech-api-client/lib/client');
 const   fs      = require('fs');
-exports.stt = function (session) {
-    /*
-        if (!process.env.MICROSOFT_SPEECH_API_KEY) {
-            console.log('You need to set a MICROSOFT_SPEECH_API_KEY env var');
-        }    
-    var bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
-    let bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
-    bing.synthesize('I have a dream').then(response => { 
-        console.log('Text to Speech completed. Audio file written to');
-    });
-    
-    bing.synthesize("hello world").then(result => {
-        var file        = "./speech.wav";
+
+exports.sendSpeechMessage = function (session, message, attachments) {
+    sendTTS(session, message, attachments);
+}
+exports.sendSpeechMessage = function (session, message) {
+    sendTTS(session, message, null);
+}
+function sendTTS(session, message, attachments) {
+    if(attachments == null) {
+        attachments = [];
+    }
+    let bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);   
+    bing.synthesize(message).then(result => {
+        var fileName    = uuid.v4() + ".wav";
+        var file        = root + "\\resource\\" + fileName;
         var wstream     = fs.createWriteStream(file);
         wstream.write(result.wave);
         wstream.close();
-        
-        session.send(wstream,'audio/wav','bing-synthesized.wav');
-
+        storage.sendAudioCard(session, fileName, message, attachments);       
     });
-    */
-   let bing = new client.BingSpeechClient(process.env.MICROSOFT_SPEECH_API_KEY);
-   
-   bing.synthesize("hello world").then(result => {
-       var file        = "./speech.wav";
-       var wstream     = fs.createWriteStream(file);
-       wstream.write(result.wave);
-       wstream.close();
-       
-       session.send(wstream,'audio/wav','bing-synthesized.wav');
-
-   });
-
-   /*
-
-    var msg = new builder.Message(session)       
-        .speak("hello world")
-        .inputHint(builder.InputHint.acceptingInput);
-    session.send(msg);
-    */
 }

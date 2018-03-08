@@ -19,7 +19,7 @@ const subscriptionKey   = process.env.BING_SEARCH_API_KEY;
 const host              = 'api.cognitive.microsoft.com';
 const path              = '/bing/v7.0/search';
 
-exports.bing_web_search = function (session, search) {
+exports.bingSearch = function (session, search) {
   logger.info('[BING-KEYWORD] ' + search);
   let request_params = {
         method : 'GET',
@@ -39,7 +39,6 @@ exports.bing_web_search = function (session, search) {
     });
     var resData = JSON.parse(res.getBody('utf-8'));
     var arr = [];
-    logger.info(resData);
     
     if(resData == null || resData.webPages == null || resData.webPages.value == null || resData.webPages.value.length == 0) {
         return;
