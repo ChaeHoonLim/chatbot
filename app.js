@@ -42,16 +42,25 @@ var connector = new builder.ChatConnector({
     appId: process.env.MICROSOFT_APP_ID,
     appPassword: process.env.MICROSOFT_APP_PASSWORD
 });
+
 /*
     Attachment(audio)
  */
 var bot = new builder.UniversalBot(connector, function (session) {
-    if(util.hasAudioAttachment(session) == false) {
-        var temp = JSON.parse(session.message);
-        logger.info("[NEED-CHECK] " + temp);
+    
+
+    var attachment  = util.hasAudioAttachment(session);
+    var text        = session.message.text;
+
+    if(attachment == false && session.message.text == '') { 
         session.send('다시 한번 말씀해 주시겠습니까?');
         return;
     }
+    if(text != '') {
+        logger.info("[NEED-CHECK] " + session.message.text);
+        return;
+    }
+    /* attachment */
     var stream = util.getAudioStreamFromMessage(connector, session.message);
     var responseMessage = "";
     speechService.getTextFromAudioStream(stream)
