@@ -41,7 +41,7 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
             logger.error(error);
             return;
         }
-        fs.unlinkSync(file); /* remove temporary file */
+        //fs.unlinkSync(file); /* remove temporary file */
         var provide = URL + "/" + fileName;
         
         /* add attachments */
