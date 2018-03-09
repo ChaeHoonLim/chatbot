@@ -119,12 +119,17 @@ function sendTTS(session, message, attachments) {
         if (fs.existsSync(dir) == false){
             fs.mkdirSync(dir);
         }
-
         var fileName    = uuid.v4() + ".wav";
         var file        = root + "\\resource\\" + fileName;
-        var wstream     = fs.createWriteStream(file);
-        wstream.write(result.wave);
-        wstream.close();
+        
+        logger.info("[START] create temporary wav file. " + file);
+        var isSaved     = fs.writeFileSync(file, result.wave);
+        var fileInfo    = fs.statSync(file);        
+        logger.info("[END][FILE-SIZE] " + fileInfo.size + "[IS-SAVED] " + (isSaved == null));
+
+        if(isSaved == false) {
+            return;
+        }
         storage.sendAudioCard(session, fileName, message, attachments);       
     });
 }

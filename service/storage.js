@@ -30,7 +30,6 @@ exports.sendAudioCard = function (session, fileName, message, attachments) {
         sleep(10);
         logger.error(file + " is not exist.");
     }
-    logger.error(file + " exist.");
 
     var blobSvc         = azure.createBlobService();    
     /* create container if not exist. */
