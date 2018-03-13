@@ -1,8 +1,9 @@
-const uuid      = require('node-uuid');
-const request   = require('request');
-const builder   = require('../core/');
-const storage   = require('./storage.js');
-const root      = require('app-root-path');
+const uuid              = require('node-uuid');
+const request           = require('request');
+const builder           = require('../core/');
+const storage           = require('./storage.js');
+const root              = require('app-root-path');
+const syncHttpClient     = require('sync-request');
 /********************************************************************************************
  * 
  * Initailize 
@@ -132,4 +133,26 @@ function sendTTS(session, message, attachments) {
         }
         storage.sendAudioCard(session, fileName, message, attachments);       
     });
+}
+exports.getIntentWithSTT = function (contentUrl) {
+    var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_STT_URI;
+
+    /* schedule information */
+    var res = syncHttpClient('POST', url, {
+        json: { 
+            'data': {
+                'content-url': contentUrl                
+            }, 'message-id': 1000
+        },
+        'headers': {
+            'Content-Type': 'application/json;charset=utf-8',
+            'Accept': '*'
+        }
+    });
+    var resData = JSON.parse(res.getBody('utf-8'));
+    
+    if(resData == null || resData.data == null) {
+        return null;
+    } 
+    return resData.data;
 }

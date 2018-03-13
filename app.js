@@ -65,36 +65,34 @@ var bot = new builder.UniversalBot(connector, function (session) {
         return;
     }
     /* attachment */
-    var stream = util.getAudioStreamFromMessage(connector, session.message);
+    // var stream = util.getAudioStreamFromMessage(connector, session.message);    
     var responseMessage = "";
-    speechService.getTextFromAudioStream(stream)
-        .then(function (text) {
-            logger.info("[STT] " + text);
-            responseMessage = "'" + text + "' 음성메시지에 대한 처리결과를 전달해 드립니다.";            
-            var data = util.getIntentAndEntity(session, text);
-            if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
-                session.send(responseMessage);
-                intentHandler.weatherHandler(session);
-            } else if(data.intent == 'route') {
-                session.send(responseMessage);
-                intentHandler.routeGuidance(session, data.entity);
-            } else if(data.intent == 'schedule') {
-                session.send(responseMessage);
-                intentHandler.getSchedule(session, data.entity);
-            } else if(data.intent == 'news') {
-                session.send(responseMessage);
-                intentHandler.getNews(session);
-            }else {
-                responseMessage = "다시 한번 말씀해 주시겠습니까? '" + text  + "'를 인식하지 못했습니다. 포털 검색 결과를 참고해 주십시오. ";                
-                speechService.sendSpeechMessage(session, responseMessage);
-                bingSearch.bingSearch(session, text);
-            }            
-        })
-        .catch(function (error) {
-            session.send('"Speech To Text" 처리과정에서 오류가 발생하였습니다.');
-            logger.error(error);
-        });
+    var data            = speechService.getIntentWithSTT(session.message.attachments[0].contentUrl);
 
+    if(data == null) {
+        session.send('"Speech To Text" 처리과정에서 오류가 발생하였습니다.');
+        return;
+    }
+    logger.info("[INTENT] " + data.intent + " [ENTITY] " + data.entity);
+    responseMessage = "'" + data.text + "' 음성메시지에 대한 처리결과를 전달해 드립니다.";     
+
+    if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
+        session.send(responseMessage);
+        intentHandler.weatherHandler(session);
+    } else if(data.intent == 'route') {
+        session.send(responseMessage);
+        intentHandler.routeGuidance(session, data.entity);
+    } else if(data.intent == 'schedule') {
+        session.send(responseMessage);
+        intentHandler.getSchedule(session, data.entity);
+    } else if(data.intent == 'news') {
+        session.send(responseMessage);
+        intentHandler.getNews(session);
+    }else {
+        responseMessage = "다시 한번 말씀해 주시겠습니까? '" + data.text  + "'를 인식하지 못했습니다. 포털 검색 결과를 참고해 주십시오. ";                
+        speechService.sendSpeechMessage(session, responseMessage);
+        bingSearch.bingSearch(session, data.text);
+    } 
 }); 
 bot.set('storage', inMemoryStorage); // Register in memory storage;
 var recognizer = new builder.LuisRecognizer(process.env.LUIS_MODEL_URL);

@@ -1,4 +1,19 @@
 "use strict";
+
+const log4js  = require('log4js');
+/********************************************************************************************
+ * 
+ * Initailize Server
+ * 
+********************************************************************************************/
+/* log4j setting */
+var logger = log4js.getLogger('[BotConnector]');
+log4js.configure({
+    appenders: {
+        out: { type: 'console' }
+    },
+    categories: { default: { appenders: ['out'], level: 'debug' } }
+});
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
         ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
@@ -406,7 +421,7 @@ var Session = (function (_super) {
     };
     Session.prototype.sendBatch = function (done) {
         var _this = this;
-        this.logger.log(this.dialogStack(), 'Session.sendBatch() sending ' + this.batch.length + ' message(s)');
+        logger.info(this.dialogStack(), 'Session.sendBatch() sending ' + this.batch.length + ' message(s)');
         if (this.sendingBatch) {
             this.batchStarted = true;
             return;

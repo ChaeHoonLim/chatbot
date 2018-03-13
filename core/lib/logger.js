@@ -4,6 +4,21 @@ var Prompt_1 = require("./dialogs/Prompt");
 var Channel = require("./Channel");
 var consts = require("./consts");
 var sprintf = require("sprintf-js");
+const log4js  = require('log4js');
+/********************************************************************************************
+ * 
+ * Initailize Server
+ * 
+********************************************************************************************/
+/* log4j setting */
+var logger = log4js.getLogger('[BotConnector]');
+log4js.configure({
+    appenders: {
+        out: { type: 'console' }
+    },
+    categories: { default: { appenders: ['out'], level: 'debug' } }
+});
+
 var debugLoggingEnabled = new RegExp('\\bbotbuilder\\b', 'i').test(process.env.NODE_DEBUG || '');
 function error(fmt) {
     var args = [];
@@ -11,7 +26,7 @@ function error(fmt) {
         args[_i - 1] = arguments[_i];
     }
     var msg = args.length > 0 ? sprintf.vsprintf(fmt, args) : fmt;
-    console.error('ERROR: ' + msg);
+    logger.error('ERROR: ' + msg);
 }
 exports.error = error;
 function warn(addressable, fmt) {
@@ -21,7 +36,7 @@ function warn(addressable, fmt) {
     }
     var prefix = getPrefix(addressable);
     var msg = args.length > 0 ? sprintf.vsprintf(fmt, args) : fmt;
-    console.warn(prefix + 'WARN: ' + msg);
+    logger.warn(prefix + 'WARN: ' + msg);
 }
 exports.warn = warn;
 function info(addressable, fmt) {
@@ -33,7 +48,7 @@ function info(addressable, fmt) {
     if (channelId === Channel.channels.emulator || debugLoggingEnabled) {
         var prefix = getPrefix(addressable);
         var msg = args.length > 0 ? sprintf.vsprintf(fmt, args) : fmt;
-        console.info(prefix + msg);
+        logger.info(prefix + msg);
     }
 }
 exports.info = info;
@@ -59,10 +74,10 @@ function debugLog(trace, fmt, args) {
     }
     var msg = args.length > 0 ? sprintf.vsprintf(fmt, args) : fmt;
     if (trace) {
-        console.trace(msg);
+        logger.trace(msg);
     }
     else {
-        console.log(msg);
+        logger.debug(msg);
     }
 }
 function getPrefix(addressable) {
