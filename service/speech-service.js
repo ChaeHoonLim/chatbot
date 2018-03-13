@@ -3,7 +3,8 @@ const request           = require('request');
 const builder           = require('../core/');
 const storage           = require('./storage.js');
 const root              = require('app-root-path');
-const syncHttpClient     = require('sync-request');
+const syncHttpClient    = require('sync-request');
+const base64            = require('base64-arraybuffer');
 /********************************************************************************************
  * 
  * Initailize 
@@ -134,14 +135,16 @@ function sendTTS(session, message, attachments) {
         storage.sendAudioCard(session, fileName, message, attachments);       
     });
 }
-exports.getIntentWithSTT = function (contentUrl) {
+exports.getIntentWithSTT = function (buffer) {
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_STT_URI;
 
+    var b64 = base64.encode(buffer);
+    logger.info("[B64] " + b64 + "[BUFFER] " + buffer.body);
     /* schedule information */
     var res = syncHttpClient('POST', url, {
         json: { 
             'data': {
-                'content-url': contentUrl                
+                'b64data': b64                
             }, 'message-id': 1000
         },
         'headers': {

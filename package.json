@@ -6,6 +6,7 @@
   "dependencies": {
     "app-root-path": "^2.0.1",
     "azure-storage": "^2.8.1",
+    "base64-arraybuffer": "^0.1.5",
     "bingspeech-api-client": "^2.4.1",
     "bluebird": "^3.5.1",
     "botbuilder": "^3.14.0",
@@ -14,8 +15,8 @@
     "moment": "^2.20.1",
     "needle": "^1.6.0",
     "node-env-file": "^0.1.8",
-    "node-uuid": "^1.4.8",
     "node-gyp": "^3.6.2",
+    "node-uuid": "^1.4.8",
     "python": "^0.0.4",
     "request": "^2.83.0",
     "require-load": "^2.2.0",
