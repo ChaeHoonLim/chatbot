@@ -18,12 +18,13 @@ var logger          = log4js.getLogger('[utils/util.js]');
 function getDate(days) {
     var result      = new Date();    
     var offset      = result.getTimezoneOffset();
-    var standard    = -540;                         /* Standard GMT TimeZone */
+    var standard    = -540;                         /* Standard KST TimeZone */
     result.setDate(result.getDate() + days);    
 
-    if(offset != standard) {                        /* convert timzone to GMT */
+    if(offset != standard) {                        /* convert timzone to KST */
         offset = (offset - standard) / 60;
-        result.setHours(result.getHours() + 9);        
+        logger.info("OFFSET: " + offset);
+        result.setHours(result.getHours() + offset);        
     }    
     
     return result;
@@ -54,7 +55,17 @@ exports.getEndDateTime = function (days) {
                         + ' 23:59';
 }
 function getDateAddMinutes(minutes) {
-    return new Date(new Date().getTime() + minutes * 60000);
+    var result      = new Date();  
+    var offset      = result.getTimezoneOffset();
+    var standard    = -540;                         /* Standard KST TimeZone */   
+
+    if(offset != standard) {                        /* convert timzone to KST */
+        offset = (offset - standard) / 60;
+        logger.info("OFFSET: " + offset);
+        result.setHours(result.getHours() + offset);        
+    }    
+
+    return new Date(result.getTime() + minutes * 60000);
 }
 exports.getTime = function (minutes) {
     var currentDate = getDateAddMinutes(minutes);
