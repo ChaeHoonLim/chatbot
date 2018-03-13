@@ -75,12 +75,12 @@ function checkRequiresToken(message) {
 exports.getAudioStreamFromMessage = function (connector, message) {
     var headers = {};
     var attachment = message.attachments[0];    
-    if (checkRequiresToken(message)) {
-        logger.info("[ATTACHMENT] " + attachment.contentUrl + "[MESSAGE] " + message.source + "[TOKEN] " + token);
+    if (checkRequiresToken(message)) {        
         connector.getAccessToken(function (error, token) {
             var tok = token;
             headers['Authorization'] = 'Bearer ' + token;
             headers['Content-Type'] = 'application/octet-stream';            
+            logger.info("[ATTACHMENT] " + attachment.contentUrl + "[MESSAGE] " + message.source + "[TOKEN] " + token);
             return needle.get(attachment.contentUrl, { headers: headers });
         });
     }    
