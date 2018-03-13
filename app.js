@@ -75,16 +75,28 @@ var bot = new builder.UniversalBot(connector, function (session) {
             if(data.intent == 'weather' || data.intent == 'hello' || data.intent == 'hi') {
                 session.send(responseMessage);
                 intentHandler.weatherHandler(session);
-            } else if(data.intent == 'route') {
-                session.send(responseMessage);
-                intentHandler.routeGuidance(session, data.entity);
-            } else if(data.intent == 'schedule') {
-                session.send(responseMessage);
-                intentHandler.getSchedule(session, data.entity);
+            } else if(data.intent == 'route') {                
+                if(data.entity == null) {
+                    responseMessage = "다시 한번 말씀해 주시겠습니까? '" + text  + "'를 인식하지 못했습니다. 포털 검색 결과를 참고해 주십시오. ";                
+                    speechService.sendSpeechMessage(session, responseMessage);
+                    bingSearch.bingSearch(session, text);
+                }else {
+                    session.send(responseMessage);
+                    intentHandler.routeGuidance(session, data.entity);
+                }
+            } else if(data.intent == 'schedule') {                
+                if(data.entity == null) {
+                    responseMessage = "다시 한번 말씀해 주시겠습니까? '" + text  + "'를 인식하지 못했습니다. 포털 검색 결과를 참고해 주십시오. ";                
+                    speechService.sendSpeechMessage(session, responseMessage);
+                    bingSearch.bingSearch(session, text);
+                }else {
+                    session.send(responseMessage);
+                    intentHandler.getSchedule(session, data.entity);
+                }
             } else if(data.intent == 'news') {
                 session.send(responseMessage);
                 intentHandler.getNews(session);
-            }else {
+            } else {
                 responseMessage = "다시 한번 말씀해 주시겠습니까? '" + text  + "'를 인식하지 못했습니다. 포털 검색 결과를 참고해 주십시오. ";                
                 speechService.sendSpeechMessage(session, responseMessage);
                 bingSearch.bingSearch(session, text);
