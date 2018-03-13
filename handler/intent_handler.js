@@ -510,7 +510,9 @@ exports.routeGuidance = function (session, entity) {
     }
     etcObj = getReservationInformation(etcObj.schedule);
     
-    message += etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다. ";
+    if(etcObj != null && etcObj.company != null && etcObj.schedule != null && etcObj.duration != null) {
+        message += etcObj.company + " '" + etcObj.schedule + "'가 " + etcObj.duration + "후 탑승 예정입니다. ";
+    }
     speechService.sendSpeechMessage(session, message, null); 
     session.endDialog();
 }
