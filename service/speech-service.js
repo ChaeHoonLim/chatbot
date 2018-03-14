@@ -135,16 +135,14 @@ function sendTTS(session, message, attachments) {
         storage.sendAudioCard(session, fileName, message, attachments);       
     });
 }
-exports.getIntentWithSTT = function (buffer) {
+exports.getText = function (contentURL) {
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_STT_URI;
 
-    var b64 = base64.encode(buffer);
-    logger.info("[B64] " + b64 + "[BUFFER] " + buffer.body);
     /* schedule information */
     var res = syncHttpClient('POST', url, {
         json: { 
             'data': {
-                'b64data': b64                
+                'content-url': contentURL                
             }, 'message-id': 1000
         },
         'headers': {
@@ -154,8 +152,8 @@ exports.getIntentWithSTT = function (buffer) {
     });
     var resData = JSON.parse(res.getBody('utf-8'));
     
-    if(resData == null || resData.data == null) {
+    if(resData == null || resData.data == null || resData.data.text == null) {
         return null;
     } 
-    return resData.data;
+    return resData.data.text;
 }
