@@ -55,14 +55,14 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
     var attachment  = util.hasAudioAttachment(session);
     var text        = session.message.text;    
-
-    if(attachment == false && session.message.text == '') { 
-        logger.info("[MESSAGE CHECK] " + session.message);
+    if(attachment == false && session.message.text == '') {         
+        logger.info(session.message);
         session.send('다시 한번 말씀해 주시겠습니까?');
         return;
     }
     if(text != '') {
         logger.info("[NEED-CHECK] " + session.message.text);
+        session.send('다시 한번 말씀해 주시겠습니까?');
         return;
     }
     /* attachment */
