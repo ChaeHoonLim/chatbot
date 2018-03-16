@@ -75,7 +75,7 @@ exports.getTime = function (minutes) {
 
 exports.hasAudioAttachment = function (session) {
     return session.message.attachments.length > 0 &&
-        (session.message.attachments[0].contentType === 'audio/wav' ||
+        (session.message.attachments[0].contentType === 'audio/wav' || session.message.attachments[0].contentType === 'audio' ||
             session.message.attachments[0].contentType === 'application/octet-stream');
 }
 
