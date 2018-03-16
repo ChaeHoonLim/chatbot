@@ -70,8 +70,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     /* attachment */
     var text            = speechService.getText(session.message.attachments[0].contentUrl);  
     if(text == null) {
-        session.send('"Speech To Text" 처리과정에서 오류가 발생하였습니다.');
-        logger.info(error);
+        session.send('음성인식을 할 수 없습니다.(음질 및 언어를 확인해 주십시오.)');
         return;
     }
     var responseMessage = "'" + text + "' 음성메시지에 대한 처리결과를 전달해 드립니다.";            
