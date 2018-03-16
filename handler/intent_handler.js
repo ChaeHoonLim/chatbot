@@ -45,18 +45,18 @@ exports.routeHandler = function (session, args) {
         speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null); 
         session.endDialog();
         return;
-    } else if(entity.toString() == '집') {               /* poi search */
+    } else if(entity.toString() == '집' || entity.toString() == 'home') {               /* poi search */
         route = "1";
-    } else if(entity.toString() == '인천공항') { 
+    } else if(entity.toString() == '인천공항'  || entity.toString() == 'airport') { 
         route = "2";
         etcObj = getEtcSchedule(session, entity.toString());
-    } else if(entity.toString() == '양재터미널' || entity.toString() == '양재버스터미널') { 
+    } else if(entity.toString() == '양재터미널' || entity.toString() == '양재버스터미널'  || entity.toString() == 'terminal') { 
         route = "3";
         etcObj = getEtcSchedule(session, entity.toString());
-    } else if(entity.toString() == '용산역') { 
+    } else if(entity.toString() == '용산역' || entity.toString() == 'station') { 
         route = "4";
         etcObj = getEtcSchedule(session, entity.toString());
-    } else if(entity.toString() == '현대엠엔소프트' || entity.toString() == '회사') { 
+    } else if(entity.toString() == '현대엠엔소프트' || entity.toString() == '회사' || entity.toString() == 'office') { 
         route = "5";
     } else {        
         speechService.sendSpeechMessage(session, "검색된 목적지가 없습니다. ", null); 
@@ -198,7 +198,8 @@ function getReservationInformation(scheduleName) {
     return resData.data[0];
 }
 function getEtcSchedule(session, destination) {
-    if(destination != "인천공항" && destination != "양재터미널" && destination != "용산역") {
+    if(destination != "인천공항" && destination != "양재터미널" && destination != "용산역" && destination != "airport"
+        && destination != "terminal" && destination != "station") {
         return;
     }
     var url = process.env.THIRD_PARTY_SERVER_URL + process.env.THIRD_PARTY_SERVER_CALENDAR_URI;
@@ -247,10 +248,10 @@ exports.scheduleHandler = function (session, args) {
     } else if(entity == null) {
         qStartDate = util.getStartDateTime(0);
         qEndDate    = util.getEndDateTime(0);
-    } else if(entity.toString() == '오늘') {
+    } else if(entity.toString() == '오늘' || entity.toString() == 'today') {
         qStartDate = util.getStartDateTime(0);
         qEndDate    = util.getEndDateTime(0);
-    } else if(entity.toString() == '내일') {
+    } else if(entity.toString() == '내일'  || entity.toString() == 'tommorow') {
         qStartDate  = util.getStartDateTime(1);
         qEndDate    = util.getEndDateTime(1);
     } else {
