@@ -55,6 +55,8 @@ var bot = new builder.UniversalBot(connector, function (session) {
 
     var attachment  = util.hasAudioAttachment(session);
     var text        = session.message.text;    
+    logger.info(session.message);
+    
     if(attachment == false && session.message.text == '') {         
         logger.info(session.message);
         session.send('다시 한번 말씀해 주시겠습니까?');
@@ -70,6 +72,7 @@ var bot = new builder.UniversalBot(connector, function (session) {
     if(text == null) {
         session.send('"Speech To Text" 처리과정에서 오류가 발생하였습니다.');
         logger.error(error);
+        return;
     }
     var responseMessage = "'" + text + "' 음성메시지에 대한 처리결과를 전달해 드립니다.";            
     var data            = util.getIntentAndEntity(session, text);
