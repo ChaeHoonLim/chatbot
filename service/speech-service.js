@@ -152,6 +152,7 @@ exports.getText = function (contentURL) {
     });
     var resData = JSON.parse(res.getBody('utf-8'));
     
+    logger.info("[STT-RESPONSE] " + resData);
     if(resData == null || resData.data == null || resData.data.text == null) {
         return null;
     } 
