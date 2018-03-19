@@ -152,7 +152,7 @@ bot.dialog('greeting', intentHandler.weatherHandler).triggerAction({
     matches: /^hello/i
 });
 bot.dialog('weather', intentHandler.weatherHandler).triggerAction({
-    matches: /^weather/i
+    matches: 'weather'
 });
 
 bot.customAction({
